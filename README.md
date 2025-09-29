@@ -1,18 +1,16 @@
 <div align="center">
 
-<div style="background-color: red; padding: 20px; border-radius: 10px; display: inline-block;">
-<img src="https://mintcdn.com/tensorfuse-docs/dmj8dBJTiBMtkrNL/logo/logo_dark_mode.png?fit=max&auto=format&n=dmj8dBJTiBMtkrNL&q=85&s=5562a2c658f07e30317caae365ebe466" alt="TensorFuse Logo" />
-</div>
+<img src="assets/TF.png" alt="TensorFuse Logo" />
 
-# 🚀 Container Snapshotter Benchmark
+# ❄️ Optimizing Cold Starts for ML Workloads
 
-**Measure and compare container snapshotter performance for ML inference workloads**
+**Eliminate container startup delays using advanced snapshotter technologies for ML inference**
 
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![AWS ECR](https://img.shields.io/badge/AWS-ECR%20Ready-orange.svg)](https://aws.amazon.com/ecr/)
 
-[Installation](#-installation) • [Image Building](#%EF%B8%8F-creating-images) • [Benchmarking](#-benchmarking) • [Results](#-benchmark-output)
+[Installation](#-installation) • [Image Building](#%EF%B8%8F-creating-optimized-images) • [Performance Testing](#-performance-testing) • [Results](#-optimization-results)
 
 </div>
 
@@ -20,7 +18,7 @@
 
 ## ✨ What is this?
 
-A comprehensive benchmarking framework that measures **startup times**, **model loading phases**, and **API readiness** across different container snapshotter technologies. Perfect for optimizing ML inference deployments.
+A cold start optimization toolkit that dramatically reduces **container startup times** and **time to first inference** using advanced snapshotter technologies. Transform your ML deployments from minutes to seconds.
 
 ## 🎯 Supported Technologies
 
@@ -89,11 +87,6 @@ Check that all services are running:
 sudo systemctl status nydus-snapshotter-fuse.service
 sudo systemctl status soci-snapshotter-grpc.service
 sudo systemctl status stargz-snapshotter.service
-
-# Test nerdctl with different snapshotters
-sudo nerdctl --snapshotter nydus version
-sudo nerdctl --snapshotter soci version
-sudo nerdctl --snapshotter stargz version
 ```
 
 ### Configure AWS CLI (Optional)
@@ -115,7 +108,7 @@ aws sts get-caller-identity
 # Example: public.ecr.aws/docker/library/nginx:latest
 ```
 
-## 🏗️ Creating Images
+## 🏗️ Creating Optimized Images
 
 ### 📋 Image Format Overview
 
@@ -130,7 +123,7 @@ Each snapshotter requires specific image formats:
 
 ### 🤖 Automated Building
 
-**One command to build all formats!** 
+**One command to create all optimized formats!** 
 
 > **💡 Tip:** Requires AWS authentication for ECR repos
 
@@ -164,7 +157,7 @@ python3 scripts/build_push.py \
 
 </details>
 
-### ✨ What the script does
+### ✨ What the optimization script does
 
 ```mermaid
 graph LR
@@ -180,7 +173,7 @@ graph LR
 4. **📤 Pushes** with proper tags (`latest-nydus`, `latest-soci`, etc.)
 5. **🧹 Cleans** local images for fresh benchmarks
 
-## 🚀 Benchmarking
+## 🚀 Performance Testing
 
 ### ⚡ Quick Start
 
@@ -228,19 +221,19 @@ python3 scripts/benchmark/test-bench-vllm.py \
 
 </details>
 
-### 🏁 Comparative Benchmarking
+### 🏁 Comparative Performance Testing
 
-**Test all snapshotters in one script:**
+**Test all optimization strategies in one script:**
 
 ```bash
 #!/bin/bash
-# 🚀 Compare all snapshotters
+# 🚀 Test all optimization strategies
 REPO="my-vllm-app"
 OUTPUT_DIR="benchmark-results"
 mkdir -p $OUTPUT_DIR
 
 for snapshotter in nydus soci estargz overlayfs; do
-  echo "🧪 Testing $snapshotter..."
+  echo "🧪 Optimizing with $snapshotter..."
   
   python3 scripts/benchmark/test-bench-vllm.py \
     --repo $REPO \
@@ -248,12 +241,12 @@ for snapshotter in nydus soci estargz overlayfs; do
     --output-json "${OUTPUT_DIR}/vllm-${snapshotter}-$(date +%Y%m%d-%H%M%S).json" \
     --keep-image
     
-  echo "✅ $snapshotter complete"
+  echo "✅ $snapshotter optimization complete"
   sleep 30  # Cool down
 done
 ```
 
-## 📊 Benchmark Output
+## 📊 Optimization Results
 
 ### 🎯 Example Results
 
@@ -278,7 +271,7 @@ Weight Download Complete to Weights Loaded:  41.667s
 Weights Loaded to Server Ready:             119.979s
 ```
 
-### 🔬 Measured Phases
+### 🔬 Cold Start Phases
 
 <details>
 <summary>🦾 vLLM Phases</summary>
@@ -381,8 +374,6 @@ sudo nerdctl --snapshotter overlayfs run --rm --gpus all \
 ## 🤝 Contributing
 
 We welcome contributions! Please feel free to submit a Pull Request.
-
-[Report Issues](https://github.com/your-repo/issues) • [Request Features](https://github.com/your-repo/issues) • [Join Discord](https://discord.gg/your-server)
 
 ---
 
