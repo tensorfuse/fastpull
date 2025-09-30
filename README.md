@@ -41,7 +41,7 @@ The below graph shows performance improvements while starting a vLLM image when 
 ### Container Images Used
 
 | Image | Description | Link | 
-|-------|-------------| -----------------|
+|-------|-------------|------------------|
 | **vLLM** | High throughput LLM inference server | [VLLM Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest) |
 | **SGLang** | Lightweight fast LLM inference engine | [SGLang Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/sglang:latest) |
 | **TensorRT-LLM** | NVIDIA optimized LLM inference library | [TensorRT Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/tensorrt:latest) |
