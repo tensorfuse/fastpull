@@ -29,7 +29,7 @@ Fastpull uses lazy-loading snapshotters like SOCI, Nydus, etc., to accelerate ma
 The below graph shows performance improvements while starting a vLLM image when using lazy-loading vs OverlayFS. 
 
 > [!IMPORTANT]
-> The following benchmarks and scripts work on an isolated VM. If you’re running production on Kubernetes and need help implementing these snapshotters in your cluster, ping us in our Slack community and we'd happy to assist. 
+> The following benchmarks and scripts work on an isolated VM. If you’re running production on Kubernetes and need help implementing these snapshotters in your cluster, ping us in our Slack community and we'd be happy to assist. 
 
 
 <div align="center">
