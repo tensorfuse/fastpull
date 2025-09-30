@@ -61,7 +61,7 @@ To replicate our setup, we recommend using the following setup from AWS:
 | **AWS CLI (optional)** | Latest |  For private ECR repos |
 
 
-### ⚡ Quick Start
+### Quick Start
 
 ```bash
 # Install all snapshotters (requires root)
