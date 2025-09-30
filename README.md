@@ -182,8 +182,8 @@ Read more: [StarGz's Github Page](https://github.com/containerd/stargz-snapshott
 
 | Parameter | Description | Default | Example |
 |-----------|-------------|---------|---------|
-| `--image` | Full URL for the repository | `none`| `custom-registry.com/my-app:tag-nydus` |
-| `--repo` | ECR repository name | `none`| `my-vllm-app` |
+| --image | Full URL for the repository | none | custom-registry.com/my-app:tag-nydus |
+| --repo | ECR repository name | none | my-vllm-app |
 | `--tag` | Image tag base | `latest` | `v1.2` |
 | `--region` | AWS region | `us-east-1` | `us-west-2` |
 | `--snapshotter` | Snapshotter type | `nydus` | `soci`, `estargz`, `overlayfs` |
