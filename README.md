@@ -169,7 +169,7 @@ Read more: [Nydus Official Website](https://nydus.dev/)
 ### SOCI
 An AWS-developed snapshotter. It creates a separate index for an existing OCI image without requiring image conversion. The index contains metadata about file locations within the compressed layers, enabling on-demand fetching.
 
-Read more: [Soci's Github Page](https://github.com/awslabs/soci-snapshotter)
+Read more: [SOCI's Github Page](https://github.com/awslabs/soci-snapshotter)
 
 ### (e)StarGZ
 An OCI-compatible image format that embeds a table of contents within the image layers. This approach requires a full conversion of the original image to the eStargz format.
