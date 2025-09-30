@@ -46,7 +46,7 @@ The below graph shows performance improvements while starting a vLLM image when 
 | **SGLang** | Lightweight fast LLM inference engine | [SGLang Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/sglang:latest) |
 | **TensorRT-LLM** | NVIDIA optimized LLM inference library | [TensorRT Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/tensorrt:latest) |
 
-The image `Dockerfile`s are available at images/{IMAGE_NAME}/Dockerfile
+The image Dockerfiles are available at images/{IMAGE_NAME}/Dockerfile
 
 All the images used in this project are pre-built and can be pulled directly from our public ECR repositories.
 
