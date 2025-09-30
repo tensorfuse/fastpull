@@ -26,7 +26,7 @@ AI/ML container images like vLLM, sglang, etc. are large (10GB+). With tradition
 
 Fastpull uses lazy-loading snapshotters like SOCI, Nydus, etc., to accelerate massive AI/ML container start times. This repo provides installation scripts, benchmarks, and real-world performance data showing 10x improvement in container startup times for generative AI workloads.
 
-The below graph shows performance improvments while starting a vLLM image when using lazy-loading vs OverlayFS. 
+The below graph shows performance improvements while starting a vLLM image when using lazy-loading vs OverlayFS. 
 
 > [!IMPORTANT]
 > The following benchmarks and scripts work on an isolated VM. If you’re running production on Kubernetes and need help implementing these snapshotters in your cluster, ping us in our Slack community and we'd happy to assist. 
