@@ -146,7 +146,7 @@ Weights Loaded to Server Ready:             119.979s
 ### Snapshotter in Containerd
 The Snapshotter is a component within Containerd responsible for managing the file system layers that make up a container image. Its primary job is to prepare and manage directories (snapshots) where each layer of a container image is unpacked and merged with previous layers, so the resulting directory reflects the current state of the container file system at any given layer. 
 
-It is using different snapshotters that we can achieve lazy loading
+Lazy loading is achieved by using different snapshotters.
 
 ### Supported Snapshotters for FastPull
 
