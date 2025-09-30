@@ -174,7 +174,7 @@ Read more: [SOCI's Github Page](https://github.com/awslabs/soci-snapshotter)
 ### (e)StarGZ
 An OCI-compatible image format that embeds a table of contents within the image layers. This approach requires a full conversion of the original image to the eStargz format.
 
-Read more: [StarGz's Github Page](https://github.com/containerd/stargz-snapshotter)
+Read more: [StarGZ's Github Page](https://github.com/containerd/stargz-snapshotter)
 
 ## Advanced Configuration
 
@@ -221,7 +221,7 @@ The installation script sets up:
 
 ### Configure AWS CLI (Optional)
 
-AWS configuration is only needed for **private ECR repositories**. Public ECR repositories can be read from without authentication, although pushing to one will require authentication again
+AWS configuration is only needed for **private ECR repositories**. Public ECR repositories can be read from without authentication, although pushing to one will require authentication
 
 **For private ECR repositories:**
 ```bash
@@ -243,7 +243,7 @@ aws ecr get-login-password --region $REGION | sudo nerdctl login --username AWS 
 
 ### Creating Optimized Images
 
-Though you can directly use our pre-built images from the following public ECR repo for TensorRT, vLLM, and SGlang. If you want to run full benchmark, you can also build and convert images yourself using the following commands. 
+Though you can directly use our pre-built images from the following public ECR repo for TensorRT, vLLM, and SGLang. If you want to run full benchmark, you can also build and convert images yourself using the following commands. 
 
 ### Image Format Overview
 
@@ -253,7 +253,7 @@ Each snapshotter requires specific image formats:
 |--------|------------|---------|
 | **Nydus** | `{tag}-nydus` | Lazy loading with RAFS |
 | **SOCI** | `{tag}-soci` | Seekable OCI chunks |
-| **eStargz** | `{tag}-estargz` | estargz streaming format |
+| **eStargz** | `{tag}-estargz` | eStargz streaming format |
 | **Standard** | `{tag}` | Base OCI (overlayfs/native) |
 
 ### Automated Building
