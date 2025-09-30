@@ -91,17 +91,6 @@ aws configure
 python3 scripts/benchmark/test-bench-vllm.py --repo my-app --snapshotter nydus
 ```
 
-### Verify Installation
-
-Check that all services are running:
-
-```bash
-# Check snapshotter services
-sudo systemctl status nydus-snapshotter-fuse.service
-sudo systemctl status soci-snapshotter-grpc.service
-sudo systemctl status stargz-snapshotter.service
-```
-
 ### Configure AWS CLI (Optional)
 
 AWS configuration is only needed for **private ECR repositories**. Public ECR repositories can be used without authentication.
