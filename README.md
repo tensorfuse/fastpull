@@ -1,10 +1,13 @@
 <div align="center">
 
-<img src="assets/TF.png" alt="TensorFuse Logo" />
+<!-- <img src="assets/fastpull.png" alt="TensorFuse Logo" /> -->
 
-# ❄️ Optimizing Cold Starts for ML Workloads
+<div align="center">
+  <img src="assets/fastpull.png" alt="TensorFuse Logo" width="700" />
+</div>
 
-**Eliminate container startup delays using advanced snapshotter technologies for ML inference**
+# Start massive AI/ML container images 10x faster with lazy-loading snapshotters
+
 
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -16,26 +19,59 @@
 
 ---
 
-## ✨ What is this?
+## Introduction
 
-A cold start optimization toolkit that dramatically reduces **container startup times** and **time to first inference** using advanced snapshotter technologies. Transform your ML deployments from minutes to seconds.
+AI/ML container images like vLLM, sglang, etc. are large (10GB+). With traditional OverlayFS, pulling a 10GB image from registry to an instance takes ~7-10 mins, causing:
+- Overprovisioning
+- High GPU idle costs, and 
+- Poor user experience during traffic spikes
 
-## 🎯 Supported Technologies
+Fastpull uses lazy-loading snapshotters like SOCI, Nydus, etc., to accelerate massive AI/ML container start times. This repo provides installation scripts, benchmarks, and real-world performance data showing 10x improvement in container startup times for generative AI workloads.
 
-### Snapshotters
-| Technology | Description | Use Case |
+The below graph shows performance improvments while starting a vLLM image when using lazy-loading vs OverlayFS. 
+
+Note: The following benchmarks and scripts work on an isolated VM. If you’re running production on Kubernetes and need help implementing these snapshotters in your cluster, ping us in our Slack community and we'd happy to assist. 
+
+
+<div align="center">
+  <img src="assets/first_log_benchmark.png" alt="benchmark" width="700" />
+</div>
+
+## 🎯 Testing Environment
+
+### AI Images Used
+
+| Image | Description |
+|-------|-------------|
+| **vLLM** | High throughput LLM inference server |
+| **SGLang** | Lightweight fast LLM inference engine |
+| **TensorRT-LLM** | NVIDIA optimized LLM inference library |
+| **CUDA** | GPU compute toolkit and runtime |
+| **Triton** | Flexible multi framework inference server |
+
+All the images used in this project are pre-built and can be pulled directly from this public ECR repo. 
+
+### Supported Snapshotters
+| Snapshotter | Description | Use Case |
 |------------|-------------|----------|
 | **🔥 Nydus** | Dragonfly's lazy loading format | Ultra-fast cold starts |
 | **⚡ SOCI** | AWS's Seekable OCI format | AWS-optimized performance |
 | **🌟 StarGZ** | Google's streaming format | Bandwidth-efficient loading |
 | **📦 Overlayfs** | Traditional Docker layers | Baseline comparison |
-| **⚙️ Native** | Containerd's native snapshotter | Standard containerd |
 
-### ML Applications
-- **🦾 vLLM**: High-performance LLM inference server
-- **🧠 SGLang**: Structured Generation Language inference server
 
 ## 📦 Installation
+
+### 🔧 Prerequisites
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **OS** | Ubuntu/Debian with systemd | Root access required |
+| **Docker** | Latest | Container runtime |
+| **Containerd** | Latest | Required for snapshotters |
+| **Python** | 3.7+ | For benchmark scripts |
+| **AWS CLI (optional)** | Latest |  For private ECR repos |
+
 
 ### ⚡ Quick Start
 
@@ -54,29 +90,6 @@ aws configure
 # 4️⃣ Ready to benchmark! 🎉
 python3 scripts/benchmark/test-bench-vllm.py --repo my-app --snapshotter nydus
 ```
-
-### 🔧 Prerequisites
-
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| **OS** | Ubuntu/Debian with systemd | Root access required |
-| **Docker** | Latest | Container runtime |
-| **Containerd** | Latest | Required for snapshotters |
-| **Python** | 3.7+ | For benchmark scripts |
-| **AWS CLI** | Latest | Optional - for ECR repos |
-
-### 🛠️ What Gets Installed
-
-The installation script sets up:
-
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| **Nydus** | v2.3.6 | Lazy loading toolkit |
-| **Nydus Snapshotter** | v0.15.3 | Containerd integration |
-| **SOCI Snapshotter** | v0.11.1 | AWS seekable format |
-| **StarGZ Snapshotter** | v0.17.0 | Google streaming format |
-| **nerdctl** | v2.1.4 | Containerd CLI |
-| **CNI Plugins** | v1.8.0 | Container networking |
 
 ### Verify Installation
 
@@ -108,7 +121,24 @@ aws sts get-caller-identity
 # Example: public.ecr.aws/docker/library/nginx:latest
 ```
 
+### 🛠️ What Gets Installed
+
+The installation script sets up:
+
+| Component | Version | Purpose |
+|-----------|---------|---------|
+| **Nydus** | v2.3.6 | Lazy loading toolkit |
+| **Nydus Snapshotter** | v0.15.3 | Containerd integration |
+| **SOCI Snapshotter** | v0.11.1 | AWS seekable format |
+| **StarGZ Snapshotter** | v0.17.0 | Google streaming format |
+| **nerdctl** | v2.1.4 | Containerd CLI |
+| **CNI Plugins** | v1.8.0 | Container networking |
+
+
+
 ## 🏗️ Creating Optimized Images
+
+Though you can directly use our pre-built images from the following public ECR repo for TensorRT, vLLM, and SGlang. If you want to run full benchmark, you can also build and convert these images yourself using the following commands. 
 
 ### 📋 Image Format Overview
 
