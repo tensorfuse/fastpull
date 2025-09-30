@@ -192,7 +192,7 @@ Read more: [StarGz's Github Page](https://github.com/containerd/stargz-snapshott
 | `--keep-image` | Keep image after test | `false` | `true` |
 | `--model-mount-path` | Local SSD mount | None | `/mnt/nvme/models` |
 
-Use either the full image path --image or use --repo with --tag
+Use either the full image path with `--image` or combine `--repo` with `--tag`.
 
 <details>
 <summary>🔧 Alternative: Full Image URL</summary>
