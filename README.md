@@ -11,7 +11,7 @@
 <a href="https://join.slack.com/t/tensorfusecommunity/shared_invite/zt-30r6ik3dz-Rf7nS76vWKOu6DoKh5Cs5w"><img src="assets/button_join-our-slack.png" width="150"></a>
 <a href="https://tensorfuse.io/docs/blogs/blog"><img src="assets/button_blog.png" width="150"></a>
 
-[Installation](#-installation) • [Image Building](#%EF%B8%8F-creating-optimized-images) • [Performance Testing](#-performance-testing) • [Results](#-optimization-results)
+[Installation](#testing-environment) • [Image Building](#creating-optimized-images) • [Results](#understanding-test-results) • [Troubleshooting](#troubleshooting)
 
 </div>
 
@@ -86,41 +86,6 @@ python3 scripts/benchmark/test-bench-vllm.py \
   --snapshotter soci
 ```
 
-## Understanding Snapshotters
-
-### Snapshotter in Containerd
-The Snapshotter is a component within Containerd responsible for managing the file system layers that make up a container image. Its primary job is to prepare and manage directories (snapshots) where each layer of a container image is unpacked and merged with previous layers, so the resulting directory reflects the current state of the container file system at any given layer. 
-
-It is using different snapshotters that we can achieve lazy loading
-
-### Supported Snapshotters for FastPull
-
-| Snapshotter | Description | Use Case |
-|------------|-------------|----------|
-| ** Nydus** | Dragonfly's lazy loading format | Ultra-fast cold starts |
-| ** SOCI** | AWS's Seekable OCI format | AWS-optimized performance |
-| ** StarGZ** | Google's streaming format | Bandwidth-efficient loading |
-| ** Overlayfs** | Traditional Docker layers | Baseline comparison |
-
-### OverlayFS - the default Snapshotter
-
-OverlayFS is the default snapshotter. It uses the Linux kernel’s overlay filesystem module to stack image layers. Any writes go to an upper directory while reads check lower layers in order. 
-
-### Nydus 
-A chunk-based, content-addressable filesystem. It performs chunk-level deduplication, which can result in smaller image sizes. Nydus also requires image conversion to its RAFS (Registry Acceleration File System) format.
-
-Read more: [Nydus Official Website](https://nydus.dev/)
-
-### SOCI
-An AWS-developed snapshotter. It creates a separate index for an existing OCI image without requiring image conversion. The index contains metadata about file locations within the compressed layers, enabling on-demand fetching.
-
-Read more: [Soci's Github Page](https://github.com/awslabs/soci-snapshotter)
-
-### (e)StarGZ
-An OCI-compatible image format that embeds a table of contents within the image layers. This approach requires a full conversion of the original image to the eStargz format.
-
-Read more: [StarGz's Github Page](https://github.com/containerd/stargz-snapshotter)
-
 ##  Understanding Testing Results
 
 ### Example Results
@@ -175,6 +140,41 @@ Weights Loaded to Server Ready:             119.979s
 | **Server Ready** | HTTP API ready |
 
 </details>
+
+## Understanding Snapshotters
+
+### Snapshotter in Containerd
+The Snapshotter is a component within Containerd responsible for managing the file system layers that make up a container image. Its primary job is to prepare and manage directories (snapshots) where each layer of a container image is unpacked and merged with previous layers, so the resulting directory reflects the current state of the container file system at any given layer. 
+
+It is using different snapshotters that we can achieve lazy loading
+
+### Supported Snapshotters for FastPull
+
+| Snapshotter | Description | Use Case |
+|------------|-------------|----------|
+| **Nydus** | Dragonfly's lazy loading format | Ultra-fast cold starts |
+| **SOCI** | AWS's Seekable OCI format | AWS-optimized performance |
+| **StarGZ** | Google's streaming format | Bandwidth-efficient loading |
+| **Overlayfs** | Traditional Docker layers | Baseline comparison |
+
+### OverlayFS - the default Snapshotter
+
+OverlayFS is the default snapshotter. It uses the Linux kernel’s overlay filesystem module to stack image layers. Any writes go to an upper directory while reads check lower layers in order. 
+
+### Nydus 
+A chunk-based, content-addressable filesystem. It performs chunk-level deduplication, which can result in smaller image sizes. Nydus also requires image conversion to its RAFS (Registry Acceleration File System) format.
+
+Read more: [Nydus Official Website](https://nydus.dev/)
+
+### SOCI
+An AWS-developed snapshotter. It creates a separate index for an existing OCI image without requiring image conversion. The index contains metadata about file locations within the compressed layers, enabling on-demand fetching.
+
+Read more: [Soci's Github Page](https://github.com/awslabs/soci-snapshotter)
+
+### (e)StarGZ
+An OCI-compatible image format that embeds a table of contents within the image layers. This approach requires a full conversion of the original image to the eStargz format.
+
+Read more: [StarGz's Github Page](https://github.com/containerd/stargz-snapshotter)
 
 ## Advanced Configuration
 
@@ -309,7 +309,7 @@ graph LR
 4. **Pushes** with proper tags (`latest-nydus`, `latest-soci`, etc.)
 5. **Cleans** local images for fresh benchmarks
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 <details>
 <summary> Common Issues & Solutions</summary>
