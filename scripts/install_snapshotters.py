@@ -236,7 +236,7 @@ def configure_nydus_snapshotter():
   "amplify_io": 1048576,
   "fs_prefetch": {
     "enable": true,
-    "threads_count": 8,
+    "threads_count": 64,
     "merging_size": 1048576,
     "prefetch_all": true
   }
@@ -291,18 +291,24 @@ def install_stargz():
     run_command(['tar', '-C', '/usr/local/bin', '-xvf', filename, 'containerd-stargz-grpc', 'ctr-remote'])
     os.remove(filename)
 
-def setup_systemd_services():
+def setup_systemd_services(snapshotters):
     """
-    Create and start systemd services for all snapshotters.
-    
+    Create and start systemd services for specified snapshotters.
+
     Creates service files for each snapshotter daemon and starts them.
     This enables automatic startup and management via systemctl.
+
+    Args:
+        snapshotters: List of snapshotters to set up ('nydus', 'soci', 'stargz')
     """
     print("------------------ Setting up Snapshotter Services -------------------------------")
-    
-    # Nydus Snapshotter service configuration
-    print("  Creating Nydus Snapshotter service...")
-    nydus_service = """[Unit]
+
+    services_to_start = []
+
+    if 'nydus' in snapshotters:
+        # Nydus Snapshotter service configuration
+        print("  Creating Nydus Snapshotter service...")
+        nydus_service = """[Unit]
 Description=nydus snapshotter (fuse mode)
 After=network.target
 
@@ -316,13 +322,15 @@ StandardError=journal
 [Install]
 WantedBy=multi-user.target
 """
-    
-    with open('/etc/systemd/system/nydus-snapshotter-fuse.service', 'w') as f:
-        f.write(nydus_service)
-    
-    # SOCI Snapshotter service configuration
-    print("  Creating SOCI Snapshotter service...")
-    soci_service = """[Unit]
+
+        with open('/etc/systemd/system/nydus-snapshotter-fuse.service', 'w') as f:
+            f.write(nydus_service)
+        services_to_start.append('nydus-snapshotter-fuse.service')
+
+    if 'soci' in snapshotters:
+        # SOCI Snapshotter service configuration
+        print("  Creating SOCI Snapshotter service...")
+        soci_service = """[Unit]
 Description=SOCI Snapshotter GRPC daemon
 After=network.target
 
@@ -334,13 +342,15 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 """
-    
-    with open('/etc/systemd/system/soci-snapshotter-grpc.service', 'w') as f:
-        f.write(soci_service)
-    
-    # StarGZ Snapshotter service configuration
-    print("  Creating StarGZ Snapshotter service...")
-    stargz_service = """[Unit]
+
+        with open('/etc/systemd/system/soci-snapshotter-grpc.service', 'w') as f:
+            f.write(soci_service)
+        services_to_start.append('soci-snapshotter-grpc.service')
+
+    if 'stargz' in snapshotters:
+        # StarGZ Snapshotter service configuration
+        print("  Creating StarGZ Snapshotter service...")
+        stargz_service = """[Unit]
 Description=Stargz Snapshotter daemon
 After=network.target
 
@@ -352,72 +362,62 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 """
-    
-    with open('/etc/systemd/system/stargz-snapshotter.service', 'w') as f:
-        f.write(stargz_service)
-    
-    # Start all snapshotter services
-    print("  Starting snapshotter services...")
-    services = [
-        'stargz-snapshotter.service',
-        'nydus-snapshotter-fuse.service',
-        'soci-snapshotter-grpc.service'
-    ]
-    
-    for service in services:
-        print(f"    Starting {service}...")
-        run_command(['systemctl', 'start', service])
 
-def setup_containerd():
+        with open('/etc/systemd/system/stargz-snapshotter.service', 'w') as f:
+            f.write(stargz_service)
+        services_to_start.append('stargz-snapshotter.service')
+
+    # Start all snapshotter services
+    if services_to_start:
+        print("  Starting snapshotter services...")
+        for service in services_to_start:
+            print(f"    Starting {service}...")
+            run_command(['systemctl', 'start', service])
+
+def setup_containerd(snapshotters):
     """
     Configure containerd to use the installed snapshotters.
-    
-    Creates containerd configuration that registers all three
+
+    Creates containerd configuration that registers specified
     snapshotters as proxy plugins, then restarts containerd.
+
+    Args:
+        snapshotters: List of snapshotters to configure ('nydus', 'soci', 'stargz')
     """
     print("------------------ Setting up Containerd -------------------------------")
-    
+
     # Ensure containerd configuration directory exists
     print("  Creating containerd configuration directory...")
     os.makedirs('/etc/containerd', exist_ok=True)
-    
-    # Containerd configuration with proxy plugins for all snapshotters
-    containerd_config = """version = 3
 
-#root = "/var/lib/containerd"
-#state = "/run/containerd"
-#oom_score = 0
+    # Build containerd configuration with proxy plugins for specified snapshotters
+    containerd_config = "version = 2\n\n[proxy_plugins]\n"
 
-#[grpc]
-#  address = "/run/containerd/containerd.sock"
-#  uid = 0
-#  gid = 0
-
-#[debug]
-#  address = "/run/containerd/debug.sock"
-#  uid = 0
-#  gid = 0
-#  level = "info"
-
-[proxy_plugins]
-  [proxy_plugins.soci]
+    if 'soci' in snapshotters:
+        containerd_config += """  [proxy_plugins.soci]
     type = "snapshot"
     address = "/run/soci-snapshotter-grpc/soci-snapshotter-grpc.sock"
-  [proxy_plugins.nydus]
+"""
+
+    if 'nydus' in snapshotters:
+        containerd_config += """  [proxy_plugins.nydus]
     type = "snapshot"
     address = "/run/containerd-nydus/containerd-nydus-grpc.sock"
-  [proxy_plugins.stargz]
+"""
+
+    if 'stargz' in snapshotters:
+        containerd_config += """  [proxy_plugins.stargz]
     type = "snapshot"
     address = "/run/containerd-stargz-grpc/containerd-stargz-grpc.sock"
-  [proxy_plugins.stargz.exports]
-    root = "/var/lib/containerd-stargz-grpc/"
+    [proxy_plugins.stargz.exports]
+      root = "/var/lib/containerd-stargz-grpc/"
 """
-    
+
     # Write containerd configuration
     print("  Writing containerd configuration...")
     with open('/etc/containerd/config.toml', 'w') as f:
         f.write(containerd_config)
-    
+
     # Restart containerd to apply new configuration
     print("  Restarting containerd service...")
     run_command(['systemctl', 'restart', 'containerd'])
@@ -425,58 +425,99 @@ def setup_containerd():
 def main():
     """
     Main installation orchestrator.
-    
+
     Performs the complete installation sequence:
     1. Verify root privileges
-    2. Install all snapshotter components and dependencies
+    2. Install specified snapshotter components and dependencies
     3. Configure services and containerd integration
     4. Start all services
-    
+
     Uses a temporary directory for downloads to avoid cluttering
     the current working directory.
     """
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Install container snapshotters for lazy-loading container images.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Install only Nydus (default)
+  sudo python3 install_snapshotters.py
+
+  # Install all snapshotters
+  sudo python3 install_snapshotters.py --snapshotters nydus,soci,stargz
+
+  # Install Nydus and SOCI
+  sudo python3 install_snapshotters.py --snapshotters nydus,soci
+        """)
+
+    parser.add_argument(
+        "--snapshotters",
+        default="nydus",
+        help="Comma-separated list of snapshotters to install (nydus,soci,stargz). Default: nydus"
+    )
+
+    args = parser.parse_args()
+
+    # Parse and validate snapshotters
+    requested_snapshotters = [s.strip() for s in args.snapshotters.split(",")]
+    valid_snapshotters = {"nydus", "soci", "stargz"}
+    invalid_snapshotters = set(requested_snapshotters) - valid_snapshotters
+
+    if invalid_snapshotters:
+        print(f"Error: Invalid snapshotters: {invalid_snapshotters}")
+        print(f"Valid options: {valid_snapshotters}")
+        sys.exit(1)
+
     # Ensure script is run with root privileges
     check_root()
-    
+
+    snapshotter_names = ", ".join(requested_snapshotters)
     print("Starting container snapshotter installation...")
-    print("This will install: Nydus, SOCI, StarGZ, nerdctl, and CNI plugins")
+    print(f"Installing: {snapshotter_names}, nerdctl, and CNI plugins")
     print()
-    
+
     # Use temporary directory for all downloads and extraction
     with tempfile.TemporaryDirectory() as tmpdir:
         original_dir = os.getcwd()
         os.chdir(tmpdir)
-        
+
         try:
             # Install core container runtime tools first
             install_nerdctl()
             install_cni_plugins()
-            
-            # Install Nydus components and verify installation
-            install_nydus()
-            install_nydus_snapshotter()
-            test_nydus_installation()
-            configure_nydus_snapshotter()
-            
-            # Install other snapshotters
-            install_soci()
-            install_stargz()
-            
-            # Set up system integration
-            setup_systemd_services()
-            setup_containerd()
-            
+
+            # Install Nydus components if requested
+            if 'nydus' in requested_snapshotters:
+                install_nydus()
+                install_nydus_snapshotter()
+                test_nydus_installation()
+                configure_nydus_snapshotter()
+
+            # Install SOCI if requested
+            if 'soci' in requested_snapshotters:
+                install_soci()
+
+            # Install StarGZ if requested
+            if 'stargz' in requested_snapshotters:
+                install_stargz()
+
+            # Set up system integration for installed snapshotters
+            setup_systemd_services(requested_snapshotters)
+            setup_containerd(requested_snapshotters)
+
         finally:
             # Return to original directory
             os.chdir(original_dir)
-    
+
     print()
     print("------------------ INSTALLATION COMPLETE -------------------")
-    print("All snapshotters have been installed and configured.")
+    print(f"Installed snapshotters: {snapshotter_names}")
     print("You can now use nerdctl with --snapshotter flag to specify:")
-    print("  --snapshotter=nydus")
-    print("  --snapshotter=soci") 
-    print("  --snapshotter=stargz")
+    for snapshotter in requested_snapshotters:
+        print(f"  --snapshotter={snapshotter}")
 
 if __name__ == "__main__":
     main()
