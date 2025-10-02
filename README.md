@@ -64,14 +64,20 @@ To replicate our setup, we recommend using the following setup from AWS:
 ### Quick Start
 
 ```bash
-# Install all snapshotters (requires root)
-git clone https://github.com/tensorfuse/fastpull.git 
+# Install Nydus snapshotter (default - requires root)
+git clone https://github.com/tensorfuse/fastpull.git
 cd fastpull/
 sudo python3 scripts/install_snapshotters.py
 
+# Or install all snapshotters
+sudo python3 scripts/install_snapshotters.py --snapshotters nydus,soci,stargz
+
+# Or install specific snapshotters only
+sudo python3 scripts/install_snapshotters.py --snapshotters nydus,soci
+
 # Verify installation
 sudo systemctl status nydus-snapshotter-fuse.service
-sudo systemctl status soci-snapshotter-grpc.service  
+sudo systemctl status soci-snapshotter-grpc.service
 sudo systemctl status stargz-snapshotter.service
 
 # Start benchmark
@@ -208,16 +214,16 @@ python3 scripts/benchmark/test-bench-vllm.py \
 
 ### What Gets Installed
 
-The installation script sets up:
+The installation script supports selective installation. By default, only Nydus is installed. You can install specific snapshotters using the `--snapshotters` flag.
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| **Nydus** | v2.3.6 | Lazy loading toolkit |
-| **Nydus Snapshotter** | v0.15.3 | Containerd integration |
-| **SOCI Snapshotter** | v0.11.1 | AWS seekable format |
-| **StarGZ Snapshotter** | v0.17.0 | Google streaming format |
-| **nerdctl** | v2.1.4 | Containerd CLI |
-| **CNI Plugins** | v1.8.0 | Container networking |
+| Component | Version | Purpose | Install by default |
+|-----------|---------|---------|-------------------|
+| **Nydus** | v2.3.6 | Lazy loading toolkit | Yes |
+| **Nydus Snapshotter** | v0.15.3 | Containerd integration | Yes |
+| **SOCI Snapshotter** | v0.11.1 | AWS seekable format | Optional |
+| **StarGZ Snapshotter** | v0.17.0 | Google streaming format | Optional |
+| **nerdctl** | v2.1.4 | Containerd CLI | Yes |
+| **CNI Plugins** | v1.8.0 | Container networking | Yes |
 
 ### Configure AWS CLI (Optional)
 
@@ -258,40 +264,114 @@ Each snapshotter requires specific image formats:
 
 ### Automated Building
 
-**One command to create all optimized formats!** 
+**One command to create all optimized formats!**
+
+The build script supports both **AWS ECR** and **Google Artifact Registry (GAR)**.
 
 > [!IMPORTANT]
-> Requires AWS authentication for ECR repos
+> Requires authentication for your chosen registry (AWS CLI for ECR, gcloud for GAR)
+
+> [!NOTE]
+> GAR currently supports: `overlayfs`, `nydus`, and `estargz` formats only. SOCI is not supported on GAR.
+
+#### AWS ECR (Elastic Container Registry)
 
 ```bash
-# 🚀 Build all formats in one go
+# Build all formats in one go
 python3 scripts/build_push.py \
+  --registry-type ecr \
   --account 123456789012 \
   --image-path ./my-dockerfile-dir \
   --image-name my-vllm-app \
   --region us-east-1
-```
 
-<details>
-<summary>🔧 Advanced Options</summary>
-
-```bash
 # Build specific formats only
 python3 scripts/build_push.py \
+  --registry-type ecr \
   --account 123456789012 \
   --image-path ./my-dockerfile-dir \
   --image-name my-vllm-app \
-  --formats normal,nydus,soci
+  --formats normal,nydus,soci \
+  --region us-east-1
+```
 
+#### Google Artifact Registry (GAR)
+
+```bash
+# Build all formats (overlayfs, nydus, estargz)
+python3 scripts/build_push.py \
+  --registry-type gar \
+  --project-id my-gcp-project \
+  --repository my-repo \
+  --image-path ./my-dockerfile-dir \
+  --image-name my-vllm-app \
+  --location us-central1
+
+# Build with defaults from gcloud config
+python3 scripts/build_push.py \
+  --registry-type gar \
+  --repository my-repo \
+  --image-path ./my-dockerfile-dir \
+  --image-name my-vllm-app \
+  --formats normal,nydus,estargz
+
+# Note: SOCI format is not supported on GAR
+python3 scripts/build_push.py \
+  --registry-type gar \
+  --repository my-repo \
+  --image-path ./my-dockerfile-dir \
+  --image-name my-vllm-app \
+  --formats normal,nydus  # Exclude soci for GAR
+```
+
+<details>
+<summary>Advanced Options</summary>
+
+```bash
 # Keep images locally (skip cleanup)
 python3 scripts/build_push.py \
+  --registry-type ecr \
   --account 123456789012 \
   --image-path ./my-dockerfile-dir \
   --image-name my-vllm-app \
   --no-cleanup
+
+# GAR with explicit location
+python3 scripts/build_push.py \
+  --registry-type gar \
+  --project-id my-project \
+  --repository ai-models \
+  --image-path ./images/sglang \
+  --image-name sglang \
+  --location us-east1 \
+  --formats normal,nydus
 ```
 
 </details>
+
+#### Prerequisites for Registry Access
+
+**For AWS ECR:**
+```bash
+# Configure AWS CLI
+aws configure
+
+# Verify access
+aws sts get-caller-identity
+```
+
+**For Google Artifact Registry:**
+```bash
+# Authenticate with GCP
+gcloud auth login
+gcloud auth application-default login
+
+# Set default project (optional)
+gcloud config set project YOUR_PROJECT_ID
+
+# Configure Docker for GAR
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
 
 ### What the optimization script does
 
