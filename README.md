@@ -2,8 +2,13 @@
 
 <!-- <img src="assets/fastpull.png" alt="TensorFuse Logo" /> -->
 
-<div align="center">
+<!-- <div align="center">
   <img src="assets/fastpull.png" alt="TensorFuse Logo" width="700" />
+</div> -->
+
+<div align="center">
+  <img src="assets/fastpull_dark.png#gh-dark-mode-only" alt="TensorFuse Logo" width="700" />
+  <img src="assets/fastpull_light.png#gh-light-mode-only" alt="TensorFuse Logo" width="700" />
 </div>
 
 # Start massive AI/ML container images 10x faster with lazy-loading snapshotters
