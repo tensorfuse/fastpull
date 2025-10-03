@@ -38,7 +38,7 @@ The below graph shows performance improvements while starting a vLLM image when 
 
 
 <div align="center">
-  <img src="assets/first_log_benchmark.png" alt="benchmark" width="700" />
+  <img src="assets/time_first_log_tensorrt.png" alt="benchmark" width="700" />
 </div>
 
 ## Testing Environment
