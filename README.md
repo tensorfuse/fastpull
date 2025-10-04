@@ -26,20 +26,19 @@
 
 Fastpull is a lazy-loading snapshotter that starts massive AI/ML container images (>10 gb) in a few seconds.
 
-> [!Tip]  
 > **[Quick start](mailto:agam@tensorfuse.io)** to install fastpull on a GPU VM and test with your own Docker Image. 
 >
 > Looking to run fastpull on k8S? – [Reachout to us via email](mailto:agam@tensorfuse.io)
 
 
-### The Cold Start Problem
+#### The Cold Start Problem
 
-AI/ML container images like CUDA, vLLM, sglang, etc. are large (10 gb+). With traditional Docker, pulling these large images takes ~7-10 mins. These slow start times creates two major problems: 
+AI/ML container images like CUDA, vLLM, sglang, etc. are large (10 gb+). With traditional Docker, pulling these large images takes **7-10 mins**. These slow start times creates two major problems: 
 
-- 20-30% GPU capacity wasted in Overprovisioning
+- 20-30% GPU capacity wasted in overprovisioning
 - Breach of customer SLAs during traffic spikes
 
-### Solution: Lazy Loading
+#### Solution: Lazy Loading
 
 Instead of pulling the entire image at once, Fastpull uses lazy-loading to pull the files necessary to start the container and then fethcing other layers as and when needed by the program. This accelerates start times by 10x as compared to traditional docker. See our results below:
 
