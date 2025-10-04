@@ -24,30 +24,30 @@
 
 ## Introduction
 
-Fastpull is a lazy-loading snapshotter that starts massive AI/ML container images (>10 gb) in a few seconds.
+Fastpull is a lazy-loading snapshotter that starts massive AI/ML container images (>10 GB) in seconds.
 
-> **[Quick start](mailto:agam@tensorfuse.io)** to install fastpull on a GPU VM and test with your own Docker Image. 
+> **[Quick start](mailto:agam@tensorfuse.io)** to install fastpull on a GPU VM and test with your own Docker image. 
 >
-> Looking to run fastpull on k8S? – [Reachout to us via email](mailto:agam@tensorfuse.io)
+> Looking to run fastpull on k8s? – [Reach out to us via email](mailto:agam@tensorfuse.io)
 
 
 #### The Cold Start Problem
 
-AI/ML container images like CUDA, vLLM, sglang, etc. are large (10 gb+). With traditional Docker, pulling these large images takes **7-10 mins**. These slow start times creates two major problems: 
+AI/ML container images like CUDA, vLLM, and sglang are large (10 GB+). With traditional Docker, pulling these large images takes **7-10 minutes**. These slow start times create two major problems: 
 
-- 20-30% GPU capacity wasted in overprovisioning
+- 20-30% GPU capacity wasted on overprovisioning
 - Breach of customer SLAs during traffic spikes
 
 #### Solution: Lazy Loading
 
-Instead of pulling the entire image at once, Fastpull uses lazy-loading to pull the files necessary to start the container and then fethcing other layers as and when needed by the program. This accelerates start times by 10x as compared to traditional docker. See our results below:
+Instead of pulling the entire image at once, fastpull uses lazy-loading to pull only the files necessary to start the container, then fetches other layers as needed by the program. This accelerates start times by 10x compared to traditional Docker. See our results below:
 
 <div align="center">
-  <img src="assets/time_first_log_tensorrt.png" alt="benchmark" width="700" />
+  <img src="assets/time_first_log_tensorrt.png" alt="benchmark" width="530" />
 </div>
 
 
-For more information on this topic, check out [fastpull blog release](https://tensorfuse.io/docs/blogs/reducing_gpu_cold_start).
+For more information, check out the [fastpull blog release](https://tensorfuse.io/docs/blogs/reducing_gpu_cold_start).
 
 
 ## Testing Environment
