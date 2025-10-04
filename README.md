@@ -11,7 +11,7 @@
   <img src="assets/fastpull_light.png#gh-light-mode-only" alt="TensorFuse Logo" width="700" />
 </div>
 
-# Start massive AI/ML container images 10x faster with lazy-loading snapshotters
+# Start massive AI/ML container images 10x faster with lazy-loading snapshotter
 
 <a href="https://join.slack.com/t/tensorfusecommunity/shared_invite/zt-30r6ik3dz-Rf7nS76vWKOu6DoKh5Cs5w"><img src="assets/button_join-our-slack.png" width="150"></a>
 <a href="https://tensorfuse.io/docs/blogs/blog"><img src="assets/button_blog.png" width="150"></a>
@@ -24,22 +24,32 @@
 
 ## Introduction
 
-AI/ML container images like vLLM, sglang, etc. are large (10GB+). With traditional OverlayFS, pulling a 10GB image from registry to an instance takes ~7-10 mins, causing:
-- Overprovisioning
-- High GPU idle costs, and 
-- Poor user experience during traffic spikes
+Fastpull is a lazy-loading snapshotter that starts massive AI/ML container images (>10 gb) in seconds instead of minutes.
 
-Fastpull uses lazy-loading snapshotters like SOCI, Nydus, etc., to accelerate massive AI/ML container start times. This repo provides installation scripts, benchmarks, and real-world performance data showing 10x improvement in container startup times for generative AI workloads.
+> [!Tip]  
+> **[Quick start](mailto:agam@tensorfuse.io)** to install fastpull on a GPU VM and test with your own Docker Image. 
+>
+> **Looking to run fastpull on your k8S?** – [Reachout to us via email](mailto:agam@tensorfuse.io)
 
-The below graph shows performance improvements while starting a vLLM image when using lazy-loading vs OverlayFS. 
 
-> [!IMPORTANT]
-> The following benchmarks and scripts work on an isolated VM. If you’re running production on Kubernetes and need help implementing these snapshotters in your cluster, ping us in our Slack community and we'd be happy to assist. 
+### The Cold Start Problem
 
+AI/ML container images like CUDA, vLLM, sglang, etc. are large (10 gb+). With traditional Docker, pulling these large images takes ~7-10 mins. These slow start times creates two major problems: 
+
+- 20-30% GPU capacity wasted in Overprovisioning
+- Breach of customer SLAs during traffic spikes
+
+### Solution: Lazy Loading
+
+Instead of pulling the entire image at once, Fastpull uses lazy-loading to pull the files necessary to start the container and then fethcing other layers as and when needed by the program. This accelerates start times by 10x as compared to traditional docker. See our results below:
 
 <div align="center">
   <img src="assets/time_first_log_tensorrt.png" alt="benchmark" width="700" />
 </div>
+
+
+For more information, check out our [Fastpull blog release](https://tensorfuse.io/docs/blogs/reducing_gpu_cold_start).
+
 
 ## Testing Environment
 
