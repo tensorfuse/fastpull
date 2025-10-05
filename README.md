@@ -80,7 +80,7 @@ python3 scripts/benchmark/test-bench-vllm.py \
 ```
 
 </details>
-<br>
+
 <details> 
 <summary><b>Option B: Build custom images</b></summary>
 
