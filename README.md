@@ -1,14 +1,8 @@
 <div align="center">
 
-<!-- <img src="assets/fastpull.png" alt="TensorFuse Logo" /> -->
-
-<!-- <div align="center">
-  <img src="assets/fastpull.png" alt="TensorFuse Logo" width="700" />
-</div> -->
-
 <div align="center">
-  <img src="assets/fastpull_dark.png#gh-dark-mode-only" alt="TensorFuse Logo" width="700" />
-  <img src="assets/fastpull_light.png#gh-light-mode-only" alt="TensorFuse Logo" width="700" />
+  <img src="assets/fastpull_dark.png#gh-dark-mode-only" alt="TensorFuse Logo" width="310" />
+  <img src="assets/fastpull_light.png#gh-light-mode-only" alt="TensorFuse Logo" width="310" />
 </div>
 
 # Start massive AI/ML container images 10x faster with lazy-loading snapshotter
@@ -26,7 +20,7 @@
 
 Fastpull is a lazy-loading snapshotter that starts massive AI/ML container images (>10 GB) in seconds.
 
-> **[Quick start](mailto:agam@tensorfuse.io)** to install fastpull on a GPU VM and test with your own Docker image. 
+> **[Quick start](#install-fastpull-on-vm)** to install fastpull on a GPU VM and test with your own Docker image. 
 >
 > Looking to run fastpull on k8s? – [Reach out to us via email](mailto:agam@tensorfuse.io)
 
@@ -50,7 +44,7 @@ Instead of pulling the entire image at once, fastpull uses lazy-loading to pull 
 For more information, check out the [fastpull blog release](https://tensorfuse.io/docs/blogs/reducing_gpu_cold_start).
 
 
-## Install fastpull on a GPU VM
+## Install fastpull on VM
 
 Fastpull install as a plugin inside the containderd config file. Follow the below steps to install fastpull on your VM and use it run your containers: 
 
@@ -65,8 +59,7 @@ Open up a VM with GPU. Make sure it has the following pre-requisites:
 
 </details>
 
-<details>
-<summary><b>Step 2: Install fastpull</b></summary>
+#### <b>Step 2: Install fastpull </b>
 
 ```bash
 # Install Fastpull snapshotter (default - requires root)
@@ -79,17 +72,12 @@ sudo systemctl status nydus-snapshotter-fuse.service
 ```
 When installed, you'll get the following message: **"✅ Fastpull installed successfully on your VM"**
 
-</details>
 
-<details>
-<summary><b>Step 3: Run containers using fastpull </b></summary>
+#### <b>Step 3: Run containers using fastpull </b>
 
-Fastpull requires your images to be in a special format. You can either build a compatible image using a Dockerfile or convert an existing image into the format.
+Fastpull requires your images to be in a special format. You can either choose from our template of pre-built images like vLLM, TensorRT, and SGlang or build your own image using a Dockerfile. 
 
-Alternatively, you can choose from our template of pre-built images like vLLM, TensorRT, and SGlang. 
-
-<details>
-<summary>Option A: Run with our pre-built images</summary>
+<details> <summary> Option A: Run with our pre-built images </summary>
 
 Replace the vLLM flag with TensorRT or Sglang to run the test with those.
 
@@ -100,72 +88,46 @@ python3 scripts/benchmark/test-bench-vllm.py \
   --snapshotter nydus
 ```
 
-Once the run is complete, you can view the results. Refer to this section for details on how to read the results. 
-
-<details>
-
-<details>
-<summary>Option B: Run with your Dockerfile</summary>
-<details>
+Refer to this section for details on how to read the results. 
 
 </details>
 
+<details> <summary> Option B: Run custom images </summary>
 
-### Container Images Used
+You can build custom images in fastpull compatible format with a simple dockerfile and the following scripts. 
 
-| Image | Description | Link | 
-|-------|-------------|------------------|
-| **vLLM** | High throughput LLM inference server | [VLLM Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest) |
-| **SGLang** | Lightweight fast LLM inference engine | [SGLang Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/sglang:latest) |
-| **TensorRT-LLM** | NVIDIA optimized LLM inference library | [TensorRT Image Repo](public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/tensorrt:latest) |
-
-The image Dockerfiles are available at images/{IMAGE_NAME}/Dockerfile
-
-All the images used in this project are pre-built and can be pulled directly from our public ECR repositories.
-
-### Prerequisites
-
-To replicate our setup, we recommend using the following setup from AWS:
-
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| **AMI** | Deep Learning Base OSS Nvidia Driver GPU AMI | AMI: ami-0f4d5ef8f66860703 |
-| **Machine Type** | G6e.xlarge | L40s GPU Machine for EC2 |
-| **AWS CLI (optional)** | Latest |  For private ECR repos |
-
-
-### Quick Start
-
+- Build image using dockerfile
 ```bash
-# Install Nydus snapshotter (default - requires root)
-git clone https://github.com/tensorfuse/fastpull.git
-cd fastpull/
-sudo python3 scripts/install_snapshotters.py
-
-# Or install all snapshotters
-sudo python3 scripts/install_snapshotters.py --snapshotters nydus,soci,stargz
-
-# Or install specific snapshotters only
-sudo python3 scripts/install_snapshotters.py --snapshotters nydus,soci
-
-# Verify installation
-sudo systemctl status nydus-snapshotter-fuse.service
-sudo systemctl status soci-snapshotter-grpc.service
-sudo systemctl status stargz-snapshotter.service
-
-# Start benchmark
-python3 scripts/benchmark/test-bench-vllm.py \
-  --image public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest \
-  --snapshotter overlayfs
-python3 scripts/benchmark/test-bench-vllm.py \
-  --image public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest-nydus \
-  --snapshotter nydus
-python3 scripts/benchmark/test-bench-vllm.py \
-  --image public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest-soci \
-  --snapshotter soci
+python3 scripts/build.py \
+  --dockerfile <path_to_your_dockerfile>
 ```
 
-##  Understanding Testing Results
+- Push to registry
+```bash
+python3 scripts/push.py \
+  --registry_type <ecr/gar> \
+  --account_id <YOUR_ACCOUNT_ID>
+```
+
+- Run the container using Fastpull
+```bash
+python3 scripts/fastpull.py \
+  --image <image_tag> 
+```
+
+</details>
+
+## Understanding Testing Results
+
+The result will be a table that consist of time taken by fastpull to start the container. For our pre-built images, we have divided this time into 5 main categories:
+
+- Time to first log: Time taken when you run the script to when the container entrypoint starts
+- Time from first log to model download start
+- Time taken to download the model (Qwen-3-8b, 16gb)
+- Time taken to load model into GPU
+- Time taken for cuda compilation/graph capture
+- Total end-to-end time from container start to server ready
+
 
 ### Example Results
 
@@ -182,7 +144,7 @@ Server Log Ready:          318.429s # Server process ready
 Server Ready:              318.435s # HTTP 200 response
 Total Test Time:           325.678s # End-to-end time
 
- BREAKDOWN:
+BREAKDOWN:
 Container to First Log:                      15.234s
 First Log to Weight Download Start:          52.656s  
 Weight Download Start to Complete:           88.899s
@@ -190,102 +152,7 @@ Weight Download Complete to Weights Loaded:  41.667s
 Weights Loaded to Server Ready:             119.979s
 ```
 
-### Cold Start Phases
-
-<details>
-<summary> vLLM Phases</summary>
-
-| Phase | What's Happening | 
-|-------|------------------|
-| **Container Startup** | Docker/nerdctl container creation |
-| **First Log** | Application process starts |
-| **Engine Init** | vLLM inference engine initialization |
-| **Weight Download** | Model weights downloaded from registry |
-| **Weights Loaded** | Model loaded into GPU memory |
-| **Graph Capture** | CUDA graph optimization |
-| **Server Ready** | HTTP API accepting requests |
-
-</details>
-
-<details>
-<summary> SGLang Phases</summary>
-
-| Phase | What's Happening |
-|-------|------------------|
-| **SGLang Init** | Framework initialization |
-| **Weight Download** | Model weights download |
-| **KV Cache** | Key-value cache allocation |
-| **Graph Capture** | CUDA optimization (begin/end) |
-| **Server Ready** | HTTP API ready |
-
-</details>
-
-## Understanding Snapshotters
-
-### Snapshotter in Containerd
-The Snapshotter is a component within Containerd responsible for managing the file system layers that make up a container image. Its primary job is to prepare and manage directories (snapshots) where each layer of a container image is unpacked and merged with previous layers, so the resulting directory reflects the current state of the container file system at any given layer. 
-
-Lazy loading is achieved by using different snapshotters.
-
-### Supported Snapshotters for FastPull
-
-| Snapshotter | Description | Use Case |
-|------------|-------------|----------|
-| **Nydus** | Dragonfly's lazy loading format | Ultra-fast cold starts |
-| **SOCI** | AWS's Seekable OCI format | AWS-optimized performance |
-| **StarGZ** | Google's streaming format | Bandwidth-efficient loading |
-| **Overlayfs** | Traditional Docker layers | Baseline comparison |
-
-### OverlayFS - the default Snapshotter
-
-OverlayFS is the default snapshotter. It uses the Linux kernel’s overlay filesystem module to stack image layers. Any writes go to an upper directory while reads check lower layers in order. 
-
-### Nydus 
-A chunk-based, content-addressable filesystem. It performs chunk-level deduplication, which can result in smaller image sizes. Nydus also requires image conversion to its RAFS (Registry Acceleration File System) format.
-
-Read more: [Nydus Official Website](https://nydus.dev/)
-
-### SOCI
-An AWS-developed snapshotter. It creates a separate index for an existing OCI image without requiring image conversion. The index contains metadata about file locations within the compressed layers, enabling on-demand fetching.
-
-Read more: [SOCI's Github Page](https://github.com/awslabs/soci-snapshotter)
-
-### (e)StarGZ
-An OCI-compatible image format that embeds a table of contents within the image layers. This approach requires a full conversion of the original image to the eStargz format.
-
-Read more: [StarGZ's Github Page](https://github.com/containerd/stargz-snapshotter)
-
-## Advanced Configuration
-
-### Testing Configuration Options
-
-| Parameter | Description | Default | Example |
-|-----------|-------------|---------|---------|
-| --image | Full URL for the repository | none | custom-registry.com/my-app:tag-nydus |
-| --repo | ECR repository name | none | my-vllm-app |
-| `--tag` | Image tag base | `latest` | `v1.2` |
-| `--region` | AWS region | `us-east-1` | `us-west-2` |
-| `--snapshotter` | Snapshotter type | `nydus` | `soci`, `estargz`, `overlayfs` |
-| `--port` | Local port binding | 8080 (vLLM), 8000 (SGLang) | `9000` |
-| `--output-json` | JSON output file | None | `results.json` |
-| `--keep-image` | Keep image after test | `false` | `true` |
-| `--model-mount-path` | Local SSD mount | None | `/mnt/nvme/models` |
-
-Use either the full image path with `--image` or combine `--repo` with `--tag`.
-
-<details>
-<summary>🔧 Alternative: Full Image URL</summary>
-
-```bash
-# Use complete image URL instead of --repo
-python3 scripts/benchmark/test-bench-vllm.py \
-  --image custom-registry.com/my-app:tag-nydus \
-  --snapshotter nydus
-```
-
-</details>
-
-### What Gets Installed
+## What Gets Installed
 
 The installation script supports selective installation. By default, only Nydus is installed. You can install specific snapshotters using the `--snapshotters` flag.
 
@@ -298,31 +165,6 @@ The installation script supports selective installation. By default, only Nydus 
 | **nerdctl** | v2.1.4 | Containerd CLI | Yes |
 | **CNI Plugins** | v1.8.0 | Container networking | Yes |
 
-### Configure AWS CLI (Optional)
-
-AWS configuration is only needed for **private ECR repositories**. Public ECR repositories can be read from without authentication, although pushing to one will require authentication
-
-**For private ECR repositories:**
-```bash
-# Configure AWS CLI with your credentials
-aws configure
-
-# Test access
-aws sts get-caller-identity
-
-# Login to repository
-aws ecr get-login-password --region $REGION | nerdctl login --username AWS --password-stdin $ACCOUNT.dkr.ecr.$REGION.amazonaws.com
-aws ecr get-login-password --region $REGION | sudo nerdctl login --username AWS --password-stdin $ACCOUNT.dkr.ecr.$REGION.amazonaws.com
-```
-
-**For public ECR repositories:**
-```bash
-# No configuration needed - public repos work without authentication
-```
-
-### Creating Optimized Images
-
-Though you can directly use our pre-built images from the following public ECR repo for TensorRT, vLLM, and SGLang. If you want to run full benchmark, you can also build and convert images yourself using the following commands. 
 
 ### Image Format Overview
 
@@ -334,206 +176,6 @@ Each snapshotter requires specific image formats:
 | **SOCI** | `{tag}-soci` | Seekable OCI chunks |
 | **eStargz** | `{tag}-estargz` | eStargz streaming format |
 | **Standard** | `{tag}` | Base OCI (overlayfs/native) |
-
-### Automated Building
-
-**One command to create all optimized formats!**
-
-The build script supports both **AWS ECR** and **Google Artifact Registry (GAR)**.
-
-> [!IMPORTANT]
-> Requires authentication for your chosen registry (AWS CLI for ECR, gcloud for GAR)
-
-> [!NOTE]
-> GAR currently supports: `overlayfs`, `nydus`, and `estargz` formats only. SOCI is not supported on GAR.
-
-#### AWS ECR (Elastic Container Registry)
-
-```bash
-# Build all formats in one go
-python3 scripts/build_push.py \
-  --registry-type ecr \
-  --account 123456789012 \
-  --image-path ./my-dockerfile-dir \
-  --image-name my-vllm-app \
-  --region us-east-1
-
-# Build specific formats only
-python3 scripts/build_push.py \
-  --registry-type ecr \
-  --account 123456789012 \
-  --image-path ./my-dockerfile-dir \
-  --image-name my-vllm-app \
-  --formats normal,nydus,soci \
-  --region us-east-1
-```
-
-#### Google Artifact Registry (GAR)
-
-```bash
-# Build all formats (overlayfs, nydus, estargz)
-python3 scripts/build_push.py \
-  --registry-type gar \
-  --project-id my-gcp-project \
-  --repository my-repo \
-  --image-path ./my-dockerfile-dir \
-  --image-name my-vllm-app \
-  --location us-central1
-
-# Build with defaults from gcloud config
-python3 scripts/build_push.py \
-  --registry-type gar \
-  --repository my-repo \
-  --image-path ./my-dockerfile-dir \
-  --image-name my-vllm-app \
-  --formats normal,nydus,estargz
-
-# Note: SOCI format is not supported on GAR
-python3 scripts/build_push.py \
-  --registry-type gar \
-  --repository my-repo \
-  --image-path ./my-dockerfile-dir \
-  --image-name my-vllm-app \
-  --formats normal,nydus  # Exclude soci for GAR
-```
-
-<details>
-<summary>Advanced Options</summary>
-
-```bash
-# Keep images locally (skip cleanup)
-python3 scripts/build_push.py \
-  --registry-type ecr \
-  --account 123456789012 \
-  --image-path ./my-dockerfile-dir \
-  --image-name my-vllm-app \
-  --no-cleanup
-
-# GAR with explicit location
-python3 scripts/build_push.py \
-  --registry-type gar \
-  --project-id my-project \
-  --repository ai-models \
-  --image-path ./images/sglang \
-  --image-name sglang \
-  --location us-east1 \
-  --formats normal,nydus
-```
-
-</details>
-
-#### Prerequisites for Registry Access
-
-**For AWS ECR:**
-```bash
-# Configure AWS CLI
-aws configure
-
-# Verify access
-aws sts get-caller-identity
-```
-
-**For Google Artifact Registry:**
-```bash
-# Authenticate with GCP
-gcloud auth login
-gcloud auth application-default login
-
-# Set default project (optional)
-gcloud config set project YOUR_PROJECT_ID
-
-# Configure Docker for GAR
-gcloud auth configure-docker us-central1-docker.pkg.dev
-```
-
-### What the optimization script does
-
-```mermaid
-graph LR
-    A[📁 Dockerfile] --> B[ Build Image]
-    B --> C[🔄 Convert Images<br/> Nydus, SOCI, StarGZ]
-    C --> D[📤 Push to ECR]
-    D --> E[🧹 Cleanup]
-```
-
-1. **Builds** base Docker image from Dockerfile
-2. **Creates** ECR repository automatically
-3. **Converts** to all snapshotter formats  
-4. **Pushes** with proper tags (`latest-nydus`, `latest-soci`, etc.)
-5. **Cleans** local images for fresh benchmarks
-
-## Troubleshooting
-
-<details>
-<summary> Common Issues & Solutions</summary>
-
-### ❌ Permission Denied
-```bash
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-### ❌ Snapshotter Service Down
-```bash
-sudo systemctl restart nydus-snapshotter-fuse.service
-sudo systemctl restart soci-snapshotter-grpc.service
-sudo systemctl restart stargz-snapshotter.service
-```
-
-### ❌ ECR Authentication Failed
-```bash
-aws configure # Setup AWS account
-aws ecr get-login-password --region {region} | \
-  docker login --username AWS --password-stdin {account}.dkr.ecr.{region}.amazonaws.com
-aws ecr get-login-password --region {region} | \
-  sudo docker login --username AWS --password-stdin {account}.dkr.ecr.{region}.amazonaws.com
-```
-
-### ❌ Image Not Found
-
-Check if repository/image exists
-```bash
-aws ecr list-images --repository-name my-app --region us-east-1
-```
-
-### ❌ SOCI Issues
-
-The cache from soci can sometimes not be erased when we use `nerdctl rmi`. To solve this, manually delete the cache files
-
-```bash
-sudo rm -rf /var/lib/soci-snapshotter-grpc/
-sudo systemctl restart soci-snapshotter-grpc.service
-```
-
-Moreover, SOCI might not run on other Clouds/AMIs. Check for SOCI compatibility with your AMI provider.
-
-</details>
-
-## ⚡ Performance Tips
-
-<details>
-<summary> Optimization/Testing Strategies</summary>
-
-### Use Local SSD
-```bash
-python3 scripts/benchmark/test-bench-vllm.py \
-  --repo my-app \
-  --model-mount-path /mnt/nvme/models \
-  --snapshotter nydus
-```
-
-### Keep Images for Multiple Runs
-
-This will let you test for image performance once it starts, but it will not give any information regarding cold starts
-
-```bash
-python3 scripts/benchmark/test-bench-vllm.py \
-  --repo my-app \
-  --keep-image \
-  --snapshotter nydus
-```
-
-</details>
 
 ---
 
