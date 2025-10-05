@@ -50,7 +50,66 @@ Instead of pulling the entire image at once, fastpull uses lazy-loading to pull 
 For more information, check out the [fastpull blog release](https://tensorfuse.io/docs/blogs/reducing_gpu_cold_start).
 
 
-## Testing Environment
+## Install fastpull on a GPU VM
+
+Fastpull install as a plugin inside the containderd config file. Follow the below steps to install fastpull on your VM and use it run your containers: 
+
+<details>
+<summary><b>Step 1: Spin up a VM</b></summary>
+
+Open up a VM with GPU. Make sure it has the following pre-requisites: 
+
+- VM instance with debian or ubuntu AMI
+- Docker and CUDA driver installed
+- Authenticate the VM with the credentials of the registry where you'll store your images (GAR, ECR, etc.)
+
+</details>
+
+<details>
+<summary><b>Step 2: Install fastpull</b></summary>
+
+```bash
+# Install Fastpull snapshotter (default - requires root)
+git clone https://github.com/tensorfuse/fastpull.git
+cd fastpull/
+sudo python3 scripts/install_snapshotters.py
+
+# Verify installation
+sudo systemctl status nydus-snapshotter-fuse.service
+```
+When installed, you'll get the following message: **"✅ Fastpull installed successfully on your VM"**
+
+</details>
+
+<details>
+<summary><b>Step 3: Run containers using fastpull </b></summary>
+
+Fastpull requires your images to be in a special format. You can either build a compatible image using a Dockerfile or convert an existing image into the format.
+
+Alternatively, you can choose from our template of pre-built images like vLLM, TensorRT, and SGlang. 
+
+<details>
+<summary>Option A: Run with our pre-built images</summary>
+
+Replace the vLLM flag with TensorRT or Sglang to run the test with those.
+
+```bash
+# Command to test the vLLM image
+python3 scripts/benchmark/test-bench-vllm.py \
+  --image public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest-nydus \
+  --snapshotter nydus
+```
+
+Once the run is complete, you can view the results. Refer to this section for details on how to read the results. 
+
+<details>
+
+<details>
+<summary>Option B: Run with your Dockerfile</summary>
+<details>
+
+</details>
+
 
 ### Container Images Used
 
