@@ -45,9 +45,8 @@ For more information, check out the [fastpull blog release](https://tensorfuse.i
 
 ### Prerequisites
 
-- Debian or Ubuntu VM with GPU
-- Docker and CUDA driver installed
-- Registry authentication configured (GAR, ECR, etc.)
+- VM Image: Works on Debian 12+ or Ubuntu VM with GPU, mileage on other AMIs may vary.
+- Docker, CUDA drivers, Nvidia Container Toolkit installed
 
 ### Installation Steps
 
@@ -56,7 +55,7 @@ For more information, check out the [fastpull blog release](https://tensorfuse.i
 ```bash
 git clone https://github.com/tensorfuse/fastpull.git
 cd fastpull/
-sudo python3 scripts/install_snapshotters.py
+sudo python3 scripts/setup.py
 
 # Verify installation
 sudo systemctl status nydus-snapshotter-fuse.service

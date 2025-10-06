@@ -160,8 +160,4 @@ Thumbs.db
 *.bak
 *.backup
 
-# Claude specific files
-CLAUDE.md
-
-# Installation scripts
-scripts/install_cuda_nvidia.sh
+results/

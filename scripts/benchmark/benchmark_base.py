@@ -52,11 +52,11 @@ def check_aws_credentials():
 def docker_login_ecr(account=None, region="us-east-1"):
     """Login to ECR using both docker and nerdctl."""
     print("Checking AWS credentials and logging into ECR...")
-    
+
     if not check_aws_credentials():
         print("Skipping ECR login due to missing AWS credentials")
         return False
-    
+
     if not account:
         # Try to get account from AWS STS
         try:
@@ -66,28 +66,57 @@ def docker_login_ecr(account=None, region="us-east-1"):
         except:
             print("Could not auto-detect AWS account ID")
             return False
-    
+
     try:
         password = run_command(f"aws ecr get-login-password --region {region}", capture_output=True)
         registry = f"{account}.dkr.ecr.{region}.amazonaws.com"
-        
-        # Login with docker
-        login_cmd = f"echo '{password}' | docker login -u AWS --password-stdin {registry}"
-        run_command(login_cmd, check=False)
-        
+
         # Login with nerdctl
         login_cmd = f"echo '{password}' | nerdctl login -u AWS --password-stdin {registry}"
         run_command(login_cmd, check=False)
-        
+
         # Login with sudo nerdctl
         login_cmd = f"echo '{password}' | sudo nerdctl login -u AWS --password-stdin {registry}"
         run_command(login_cmd, check=False)
-        
+
         print("✓ Successfully logged into ECR")
         return True
-        
+
     except Exception as e:
         print(f"Warning: Could not login to ECR: {e}")
+        return False
+
+
+def docker_login_gar(location="us-central1"):
+    """Login to Google Artifact Registry using both docker and nerdctl."""
+    print("Checking gcloud credentials and logging into Google Artifact Registry...")
+
+    try:
+        # Check if gcloud is configured
+        run_command("gcloud config get-value project", capture_output=True)
+    except:
+        print("Warning: gcloud not configured. Please run 'gcloud auth login' first.")
+        return False
+
+    try:
+        registry = f"{location}-docker.pkg.dev"
+
+        # Get access token from gcloud
+        password = run_command("gcloud auth print-access-token", capture_output=True)
+
+        # Login with nerdctl
+        login_cmd = f"echo '{password}' | nerdctl login -u oauth2accesstoken --password-stdin https://{registry}"
+        run_command(login_cmd, check=False)
+
+        # Login with sudo nerdctl
+        login_cmd = f"echo '{password}' | sudo nerdctl login -u oauth2accesstoken --password-stdin https://{registry}"
+        run_command(login_cmd, check=False)
+
+        print("✓ Successfully logged into Google Artifact Registry")
+        return True
+
+    except Exception as e:
+        print(f"Warning: Could not login to Google Artifact Registry: {e}")
         return False
 
 
@@ -591,7 +620,7 @@ class BenchmarkBase(ABC):
         print(f"Port: {self.port}")
         print()
         
-        # Check AWS credentials and login to ECR if needed
+        # Check credentials and login to registry if needed
         if ".ecr." in self.image:
             print("ECR image detected, attempting AWS login...")
             # Extract region from image URL if possible, otherwise use default
@@ -599,6 +628,19 @@ class BenchmarkBase(ABC):
             if hasattr(self, '_region'):
                 region = self._region
             docker_login_ecr(region=region)
+        elif ".pkg.dev" in self.image:
+            print("Google Artifact Registry image detected, attempting gcloud login...")
+            # Extract location from image URL if possible, otherwise use default
+            location = "us-central1"  # Default location
+            if hasattr(self, '_location'):
+                location = self._location
+            else:
+                # Try to parse location from image URL (format: location-docker.pkg.dev)
+                import re
+                match = re.search(r'([a-z]+-[a-z]+\d+)-docker\.pkg\.dev', self.image)
+                if match:
+                    location = match.group(1)
+            docker_login_gar(location=location)
         
         # Cleanup
         print("Cleaning up existing containers...")
