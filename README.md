@@ -68,8 +68,7 @@ You should see: **"✅ Fastpull installed successfully on your VM"**
 
 Fastpull requires your images to be in a special format. You can either choose from our template of pre-built images like vLLM, TensorRT, and SGlang or build your own using a Dockerfile. 
 
-<details> 
-<summary><b>Option A: Use pre-built images</b></summary>
+<b>Option A: Use pre-built images</b>
 
 Test with vLLM, TensorRT, or Sglang:
 
@@ -79,10 +78,7 @@ python3 scripts/benchmark/test-bench-vllm.py \
   --snapshotter nydus
 ```
 
-</details>
-
-<details> 
-<summary><b>Option B: Build custom images</b></summary>
+<b>Option B: Build custom images</b>
 
 Build from your Dockerfile:
 
@@ -99,7 +95,6 @@ python3 scripts/push.py \
 python3 scripts/fastpull.py --image <image_tag>
 ```
 
-</details>
 
 ---
 
@@ -114,8 +109,7 @@ Results show timing breakdown across startup phases:
 - **CUDA compilation/graph capture:** Optimization phase
 - **Total end-to-end time:** Container start to server ready
 
-<details> 
-<summary><b>Example Output</b></summary>
+<b>Example Output</b>
 
 ```bash
 === VLLM TIMING SUMMARY ===
@@ -136,7 +130,6 @@ Weight Download Start to Complete:           88.899s
 Weight Download Complete to Weights Loaded:  41.667s
 Weights Loaded to Server Ready:             119.979s
 ```
-</details>
 
 ---
 
