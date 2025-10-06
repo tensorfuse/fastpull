@@ -18,15 +18,15 @@ def add_parser(subparsers):
     parser = subparsers.add_parser(
         'run',
         help='Run container with specified snapshotter',
-        description='Run containers with Nydus, SOCI, eStarGZ, or Docker/OverlayFS'
+        description='Run containers with Nydus or OverlayFS snapshotter'
     )
 
-    # Required arguments
+    # Mode selection (replaces --snapshotter)
     parser.add_argument(
-        '--snapshotter',
-        required=True,
-        choices=['nydus', 'overlayfs', 'docker', 'soci', 'estargz'],
-        help='Snapshotter to use for running the container'
+        '--mode',
+        choices=['nydus', 'normal'],
+        default='nydus',
+        help='Run mode: nydus (default, adds -nydus suffix) or normal (overlayfs, no suffix)'
     )
 
     # Benchmarking arguments
@@ -78,10 +78,25 @@ def run_command(args):
         print("Error: --readiness-endpoint is required when --benchmark-mode=readiness")
         sys.exit(1)
 
+    # Determine snapshotter and modify image tag based on mode
+    if args.mode == 'nydus':
+        args.snapshotter = 'nydus'
+        # Add -nydus suffix to image tag if not already present
+        if ':' in args.image:
+            base, tag = args.image.rsplit(':', 1)
+            if not tag.endswith('-nydus'):
+                args.image = f"{base}:{tag}-nydus"
+        else:
+            args.image = f"{args.image}:latest-nydus"
+    else:  # normal mode
+        args.snapshotter = 'overlayfs'
+        # Use image as-is for normal mode
+
     # Build the nerdctl/docker command
     cmd = build_run_command(args)
 
     print(f"Running container with {args.snapshotter} snapshotter...")
+    print(f"Image: {args.image}")
     print(f"Command: {' '.join(cmd)}\n")
 
     # For benchmarking, we need to track the container
@@ -102,8 +117,8 @@ def build_run_command(args) -> List[str]:
         Command as list of strings
     """
     # Determine binary (use sudo)
-    if args.snapshotter in ['docker', 'overlayfs']:
-        cmd = ['sudo', 'docker', 'run']
+    if args.snapshotter == 'overlayfs':
+        cmd = ['sudo', 'nerdctl', '--snapshotter', 'overlayfs', 'run']
     else:
         cmd = ['sudo', 'nerdctl', '--snapshotter', args.snapshotter, 'run']
 
@@ -215,7 +230,8 @@ def run_with_benchmark(cmd: List[str], args):
 
     # Start monitoring logs in background
     print("Monitoring container logs...")
-    log_thread = start_log_monitoring(container_id, args.snapshotter, bench.start_time)
+    stop_logs_event = threading.Event()
+    log_thread = start_log_monitoring(container_id, args.snapshotter, bench.start_time, stop_logs_event)
 
     # Wait for completion or readiness
     try:
@@ -225,6 +241,9 @@ def run_with_benchmark(cmd: List[str], args):
             success = bench.wait_for_readiness()
         else:
             success = True
+
+        # Stop log monitoring after benchmark completes
+        stop_logs_event.set()
 
         if not success:
             print("Benchmark failed (timeout)")
@@ -250,7 +269,7 @@ def run_with_benchmark(cmd: List[str], args):
         sys.exit(1)
 
 
-def start_log_monitoring(container_id: str, snapshotter: str, start_time: float) -> threading.Thread:
+def start_log_monitoring(container_id: str, snapshotter: str, start_time: float, stop_event: threading.Event) -> threading.Thread:
     """
     Start monitoring container logs in background thread.
 
@@ -258,14 +277,14 @@ def start_log_monitoring(container_id: str, snapshotter: str, start_time: float)
         container_id: Container ID
         snapshotter: Snapshotter type
         start_time: Benchmark start time
+        stop_event: Event to signal when to stop monitoring
 
     Returns:
         Log monitoring thread
     """
     def log_reader():
         try:
-            binary = 'docker' if snapshotter in ['docker', 'overlayfs'] else 'nerdctl'
-            cmd = ['sudo', binary, 'logs', '-f', container_id]
+            cmd = ['sudo', 'nerdctl', 'logs', '-f', container_id]
 
             process = subprocess.Popen(
                 cmd,
@@ -277,6 +296,9 @@ def start_log_monitoring(container_id: str, snapshotter: str, start_time: float)
             )
 
             for line in process.stdout:
+                if stop_event.is_set():
+                    process.terminate()
+                    break
                 if line:
                     elapsed = time.time() - start_time
                     print(f"[{elapsed:.3f}s] {line.rstrip()}")
@@ -297,8 +319,6 @@ def cleanup_container(container_id: str, snapshotter: str):
         container_id: Container ID
         snapshotter: Snapshotter type
     """
-    binary = 'docker' if snapshotter in ['docker', 'overlayfs'] else 'nerdctl'
-
     print(f"Cleaning up container {container_id[:12]}...")
-    subprocess.run(['sudo', binary, 'stop', container_id], capture_output=True)
-    subprocess.run(['sudo', binary, 'rm', container_id], capture_output=True)
+    subprocess.run(['sudo', 'nerdctl', 'stop', container_id], capture_output=True)
+    subprocess.run(['sudo', 'nerdctl', 'rm', container_id], capture_output=True)

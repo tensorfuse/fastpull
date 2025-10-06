@@ -7,17 +7,8 @@ Main CLI entry point for the unified fastpull command.
 
 import argparse
 import sys
-import os
 
-# Add the library directory to the path to import fastpull module
-# When installed, fastpull module is at /usr/local/lib/fastpull
-# When running from source, it's in the same directory as this script
-script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, script_dir)  # For running from source
-sys.path.insert(0, '/usr/local/lib')  # For installed version
-
-from fastpull import __version__
-from fastpull import run, build, quickstart
+from . import __version__, run, build, quickstart, clean
 
 
 def main():
@@ -57,6 +48,7 @@ For more information, visit: https://github.com/tensorfuse/fastpull
     run.add_parser(subparsers)
     build.add_parser(subparsers)
     quickstart.add_parser(subparsers)
+    clean.add_parser(subparsers)
 
     # Parse arguments
     args = parser.parse_args()

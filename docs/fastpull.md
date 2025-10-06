@@ -14,21 +14,53 @@ fastpull --version
 
 ## Commands
 
+### `fastpull quickstart` - Quick Benchmark Comparisons
+
+Run pre-configured benchmarks to quickly compare snapshotter performance.
+
+#### Available Workloads
+
+**TensorRT:**
+```bash
+sudo fastpull quickstart tensorrt
+sudo fastpull quickstart tensorrt --output-dir ./results
+```
+
+**vLLM:**
+```bash
+sudo fastpull quickstart vllm
+sudo fastpull quickstart vllm --output-dir ./results
+```
+
+**SGLang:**
+```bash
+sudo fastpull quickstart sglang
+sudo fastpull quickstart sglang --output-dir ./results
+```
+
+Each quickstart automatically runs the same workload with:
+1. FastPull mode (Nydus snapshotter)
+2. Normal mode (OverlayFS snapshotter)
+
+With readiness benchmarking to measure startup performance.
+
+---
+
 ### `fastpull run` - Run Containers with Benchmarking
 
-Run containers with Nydus, SOCI, eStarGZ, or Docker/OverlayFS snapshotters.
+Run containers with FastPull (Nydus) or Normal (OverlayFS) mode.
 
 #### Basic Usage
 
 ```bash
-# Run with Nydus
-fastpull run --snapshotter nydus --image myapp:latest-nydus
+# Run with FastPull mode (default, auto-adds -nydus suffix to tag)
+fastpull run myapp:latest
 
-# Run with Docker/OverlayFS
-fastpull run --snapshotter docker --image myapp:latest
+# Run with Normal mode (OverlayFS, no suffix)
+fastpull run --mode normal myapp:latest
 
 # Run with GPU support
-fastpull run --snapshotter nydus --image myapp:latest-nydus --gpus all -p 8080:8080
+fastpull run myapp:latest --gpus all -p 8080:8080
 ```
 
 #### Benchmarking Modes
@@ -36,8 +68,7 @@ fastpull run --snapshotter nydus --image myapp:latest-nydus --gpus all -p 8080:8
 **Readiness Mode** - Poll HTTP endpoint until 200 response:
 ```bash
 fastpull run \
-  --snapshotter nydus \
-  --image myapp:latest-nydus \
+  myapp:latest \
   --benchmark-mode readiness \
   --readiness-endpoint http://localhost:8080/health \
   -p 8080:8080
@@ -46,16 +77,14 @@ fastpull run \
 **Completion Mode** - Wait for container to exit:
 ```bash
 fastpull run \
-  --snapshotter nydus \
-  --image myapp:latest-nydus \
+  myapp:latest \
   --benchmark-mode completion
 ```
 
 **Export Metrics** - Save results to JSON:
 ```bash
 fastpull run \
-  --snapshotter nydus \
-  --image myapp:latest-nydus \
+  myapp:latest \
   --benchmark-mode readiness \
   --readiness-endpoint http://localhost:8080/health \
   --output-json results.json \
@@ -64,8 +93,8 @@ fastpull run \
 
 #### Supported Flags
 
-- `--snapshotter` - Choose: nydus, overlayfs, docker, soci, estargz (required)
-- `--image` - Container image to run (required)
+- `--mode` - Run mode: nydus (default, adds -nydus suffix), normal (overlayfs, no suffix)
+- `IMAGE` - Container image to run (positional argument, required)
 - `--benchmark-mode` - Options: none, completion, readiness (default: none)
 - `--readiness-endpoint` - HTTP endpoint for health checks
 - `--output-json` - Export metrics to JSON file
@@ -76,6 +105,21 @@ fastpull run \
 - `--gpus` - GPU devices (e.g., "all")
 - `--rm` - Auto-remove container on exit
 - `-d, --detach` - Run in background
+
+**Note:** Any additional arguments after the image are passed through to nerdctl.
+
+#### Pass-through Examples
+
+```bash
+# Custom entrypoint
+fastpull run myapp:latest --entrypoint /bin/bash
+
+# Command override
+fastpull run myapp:latest python script.py --arg1 value1
+
+# Additional nerdctl flags
+fastpull run myapp:latest --privileged --network host
+```
 
 ---
 
@@ -93,13 +137,7 @@ fastpull build --image-path ./app --image myapp:latest
 fastpull build \
   --image-path ./app \
   --image myapp:v1 \
-  --format docker,nydus,soci
-
-# Build all formats
-fastpull build \
-  --image-path ./app \
-  --image myapp:v1 \
-  --format docker,nydus,soci,estargz
+  --format docker,nydus
 ```
 
 #### Build Options
@@ -126,12 +164,50 @@ fastpull build \
 
 - `--image-path` - Path to Dockerfile directory (required)
 - `--image` - Image name and tag (required)
-- `--format` - Comma-separated formats: docker, nydus, soci, estargz (default: docker,nydus)
+- `--format` - Comma-separated formats: docker, nydus (default: docker,nydus)
 - `--no-cache` - Build without cache
 - `--build-arg` - Build arguments (repeatable)
 - `--dockerfile` - Dockerfile name (default: Dockerfile)
 
 **Note:** Images are automatically pushed to the registry after building.
+
+---
+
+### `fastpull clean` - Remove Local Images and Artifacts
+
+Clean up local container images and stopped containers.
+
+#### Basic Usage
+
+```bash
+# Clean all images and containers (requires confirmation)
+fastpull clean --all
+
+# Clean only images
+fastpull clean --images
+
+# Clean only stopped containers
+fastpull clean --containers
+
+# Target specific snapshotter
+fastpull clean --all --snapshotter nydus
+fastpull clean --all --snapshotter overlayfs
+
+# Dry run to see what would be removed
+fastpull clean --all --dry-run
+
+# Force removal without confirmation
+fastpull clean --all --force
+```
+
+#### Supported Flags
+
+- `--images` - Remove all images
+- `--containers` - Remove stopped containers
+- `--all` - Remove both images and containers
+- `--snapshotter` - Target specific snapshotter: nydus, overlayfs, all (default: all)
+- `--dry-run` - Show what would be removed without removing
+- `--force` - Force removal without confirmation
 
 ---
 
@@ -144,10 +220,9 @@ fastpull build \
   --image 123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:v1.0 \
   --format docker,nydus
 
-# 2. Run with benchmarking
+# 2. Run with benchmarking (FastPull mode, auto-adds -nydus suffix)
 fastpull run \
-  --snapshotter nydus \
-  --image 123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:v1.0-nydus \
+  123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:v1.0 \
   --benchmark-mode readiness \
   --readiness-endpoint http://localhost:8000/health \
   --output-json benchmark-results.json \

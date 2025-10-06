@@ -2,21 +2,19 @@
 """
 FastPull Setup Script
 
-Installs fastpull CLI and configures containerd with Nydus snapshotter.
+Installs containerd, Nydus snapshotter, and FastPull CLI via pip.
 """
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 
 
-FASTPULL_CLI = "/usr/local/bin/fastpull"
-FASTPULL_LIB = "/usr/local/lib/fastpull"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SOURCE_CLI = os.path.join(SCRIPT_DIR, "fastpull-cli.py")
-SOURCE_LIB = os.path.join(SCRIPT_DIR, "fastpull")
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+VENV_PATH = os.path.join(PROJECT_ROOT, '.venv')
+FASTPULL_BIN = '/usr/local/bin/fastpull'
 
 
 def run_command(cmd, check=True, capture_output=False, shell=False):
@@ -104,9 +102,14 @@ def install_nydus():
     print("="*60)
 
     nydus_path = "/usr/local/bin/containerd-nydus-grpc"
+    service_path = "/etc/systemd/system/fastpull.service"
 
+    # Check if binary exists
     if os.path.exists(nydus_path):
-        print(f"✓ Nydus already installed at {nydus_path}")
+        print(f"✓ Nydus binary found at {nydus_path}")
+        # Always recreate service and config (to ensure latest settings)
+        print("Updating service and configuration...")
+        create_nydus_service()
         return True
 
     install_script = """
@@ -124,83 +127,93 @@ tar xzf nydus.tgz
 mv nydus-static/* /usr/local/bin/
 rm -rf nydus-static nydus.tgz
 
-# Create config directory
-mkdir -p /etc/nydus
+echo "✓ Nydus binaries installed"
+"""
 
-# Create Nydus config
-cat > /etc/nydus/config.json <<'EOF'
+    try:
+        result = run_command(install_script, shell=True, capture_output=True)
+        print("✓ Nydus binaries installed successfully")
+
+        # Now create the service (shared code)
+        create_nydus_service()
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"✗ Failed to install Nydus: {e}")
+        if e.stderr:
+            print(f"stderr: {e.stderr}")
+        return False
+
+
+def create_nydus_service():
+    """Create systemd service for Nydus snapshotter."""
+    service_script = """
+# Create systemd service
+cat > /etc/systemd/system/fastpull.service <<'EOF'
+[Unit]
+Description=nydus snapshotter (fuse mode)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/containerd-nydus-grpc --nydusd-config /etc/nydus/nydusd-config.fusedev.json
+Restart=always
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Create necessary directories
+mkdir -p /etc/nydus
+mkdir -p /var/lib/nydus/cache
+
+# Create Nydus config if it doesn't exist
+if [ ! -f /etc/nydus/nydusd-config.fusedev.json ]; then
+cat > /etc/nydus/nydusd-config.fusedev.json <<'EOF'
 {
   "device": {
     "backend": {
       "type": "registry",
       "config": {
-        "scheme": "https"
+        "timeout": 5,
+        "connect_timeout": 5,
+        "retry_limit": 2
       }
     },
     "cache": {
-      "type": "blobcache",
-      "config": {
-        "work_dir": "/var/lib/nydus/cache"
-      }
+      "type": "blobcache"
     }
   },
   "mode": "direct",
   "digest_validate": false,
   "iostats_files": false,
   "enable_xattr": true,
+  "amplify_io": 10485760,
   "fs_prefetch": {
     "enable": true,
-    "threads_count": 4
+    "threads_count": 16,
+    "merging_size": 1048576,
+    "prefetch_all": true
   }
 }
 EOF
-
-# Create cache directory
-mkdir -p /var/lib/nydus/cache
-
-# Create systemd service
-cat > /etc/systemd/system/fastpull.service <<'EOF'
-[Unit]
-Description=FastPull - Nydus Snapshotter
-After=containerd.service
-Requires=containerd.service
-
-[Service]
-Type=notify
-ExecStart=/usr/local/bin/containerd-nydus-grpc \
-    --config-path /etc/nydus/config.json \
-    --daemon-mode shared \
-    --log-level info \
-    --root /var/lib/nydus \
-    --address /run/nydus/nydus-snapshotter.sock \
-    --nydusd-path /usr/local/bin/nydusd \
-    --log-to-stdout
-Restart=always
-RestartSec=1
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Create socket directory
-mkdir -p /run/nydus
+fi
 
 # Enable and start service
 systemctl daemon-reload
 systemctl enable fastpull.service
 systemctl start fastpull.service
 
-echo "✓ Nydus snapshotter installed and started"
+echo "✓ Nydus service created and started"
 """
 
     try:
-        result = run_command(install_script, shell=True, capture_output=True)
-        print("✓ Nydus snapshotter installed successfully")
+        run_command(service_script, shell=True, capture_output=True)
+        print("✓ Created and started fastpull.service")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"✗ Failed to install Nydus: {e}")
-        if e.stderr:
-            print(f"stderr: {e.stderr}")
+        print(f"✗ Failed to create service: {e}")
         return False
 
 
@@ -219,7 +232,7 @@ def configure_containerd_for_nydus():
 [proxy_plugins]
   [proxy_plugins.nydus]
     type = "snapshot"
-    address = "/run/nydus/nydus-snapshotter.sock"
+    address = "/run/containerd-nydus/containerd-nydus-grpc.sock"
 
 [plugins."io.containerd.grpc.v1.cri".containerd]
   snapshotter = "nydus"
@@ -229,43 +242,65 @@ def configure_containerd_for_nydus():
     with open(config_file, 'w') as f:
         f.write(config_content)
 
-    print(f"✓ Created containerd config at {config_file}")
+    print(f"✓ Updated containerd config at {config_file}")
 
-    # Restart containerd service
+    # Restart fastpull service first
+    print("Restarting fastpull service...")
+    run_command(["systemctl", "restart", "fastpull.service"], check=False)
+
+    # Then restart containerd service
     print("Restarting containerd service...")
     run_command(["systemctl", "restart", "containerd.service"], check=False)
+
+    print("✓ Services restarted")
 
     return True
 
 
 def install_cli():
-    """Install fastpull CLI and library to /usr/local."""
+    """Install fastpull CLI via pip in a venv."""
     print("\n" + "="*60)
     print("Installing FastPull CLI")
     print("="*60)
 
-    # Check if source exists
-    if not os.path.exists(SOURCE_CLI):
-        print(f"✗ Source CLI not found: {SOURCE_CLI}")
-        return False
-
-    if not os.path.exists(SOURCE_LIB):
-        print(f"✗ Source library not found: {SOURCE_LIB}")
-        return False
-
     try:
-        # Copy the fastpull module directory
-        if os.path.exists(FASTPULL_LIB):
-            shutil.rmtree(FASTPULL_LIB)
-        shutil.copytree(SOURCE_LIB, FASTPULL_LIB)
-        print(f"✓ Installed fastpull library to {FASTPULL_LIB}")
+        # Create venv if it doesn't exist
+        if not os.path.exists(VENV_PATH):
+            print(f"Creating virtual environment at {VENV_PATH}...")
+            result = run_command(['python3', '-m', 'venv', VENV_PATH], check=False, capture_output=True)
+            if result.returncode != 0:
+                print(f"✗ Failed to create venv: {result.stderr}")
+                return False
+            print(f"✓ Created virtual environment")
 
-        # Copy and rename CLI script
-        shutil.copy2(SOURCE_CLI, FASTPULL_CLI)
-        os.chmod(FASTPULL_CLI, 0o755)
-        print(f"✓ Installed fastpull CLI to {FASTPULL_CLI}")
+        # Get pip path in venv
+        venv_pip = os.path.join(VENV_PATH, 'bin', 'pip')
+        venv_python = os.path.join(VENV_PATH, 'bin', 'python3')
+
+        # Install fastpull in venv
+        print("Installing fastpull in virtual environment...")
+        result = run_command([venv_pip, 'install', '-e', PROJECT_ROOT], check=False, capture_output=True)
+        if result.returncode != 0:
+            print(f"✗ Failed to install in venv: {result.stderr}")
+            return False
+        print("✓ Installed fastpull in virtual environment")
+
+        # Create wrapper script in /usr/local/bin
+        wrapper_script = f"""#!/bin/bash
+# FastPull CLI wrapper script
+# Activates venv and runs fastpull
+
+exec {venv_python} -m scripts.fastpull.cli "$@"
+"""
+
+        print(f"Creating wrapper script at {FASTPULL_BIN}...")
+        with open(FASTPULL_BIN, 'w') as f:
+            f.write(wrapper_script)
+        os.chmod(FASTPULL_BIN, 0o755)
+        print(f"✓ Created fastpull command at {FASTPULL_BIN}")
 
         return True
+
     except Exception as e:
         print(f"✗ Failed to install fastpull: {e}")
         return False
@@ -277,15 +312,15 @@ def verify_installation():
     print("Verifying Installation")
     print("="*60)
 
-    # Check CLI
-    if not os.path.exists(FASTPULL_CLI):
-        print(f"✗ fastpull CLI not found at {FASTPULL_CLI}")
-        return False
-
     # Test CLI
     try:
-        result = run_command([FASTPULL_CLI, '--version'], capture_output=True)
-        print(f"✓ fastpull CLI: {result.stdout.strip()}")
+        result = run_command(['fastpull', '--version'], capture_output=True, check=False)
+        if result.returncode == 0:
+            print(f"✓ fastpull CLI: {result.stdout.strip()}")
+        else:
+            print(f"✗ fastpull CLI not found in PATH")
+            print("Try running: hash -r (or restart your shell)")
+            return False
     except Exception as e:
         print(f"✗ fastpull CLI test failed: {e}")
         return False
@@ -359,32 +394,39 @@ Examples:
         print("Uninstalling fastpull...")
         removed = False
 
-        if os.path.exists(FASTPULL_CLI):
-            os.remove(FASTPULL_CLI)
-            print(f"✓ Removed {FASTPULL_CLI}")
+        # Remove wrapper script
+        if os.path.exists(FASTPULL_BIN):
+            os.remove(FASTPULL_BIN)
+            print(f"✓ Removed {FASTPULL_BIN}")
             removed = True
-        else:
-            print(f"  {FASTPULL_CLI} not found")
 
-        if os.path.exists(FASTPULL_LIB):
-            shutil.rmtree(FASTPULL_LIB)
-            print(f"✓ Removed {FASTPULL_LIB}")
+        # Remove venv
+        if os.path.exists(VENV_PATH):
+            import shutil
+            shutil.rmtree(VENV_PATH)
+            print(f"✓ Removed virtual environment at {VENV_PATH}")
             removed = True
-        else:
-            print(f"  {FASTPULL_LIB} not found")
 
         if removed:
             print("✓ Uninstall complete")
+        else:
+            print("✗ fastpull not found or already uninstalled")
         return
 
     print("="*60)
     print("FastPull Setup")
     print("="*60)
-    print("\nThis will install:")
-    print("  • Containerd and nerdctl")
-    print("  • Nydus snapshotter")
-    print("  • FastPull CLI tool")
-    print()
+
+    if args.cli_only:
+        print("\nThis will install:")
+        print("  • FastPull CLI tool (via pip)")
+        print()
+    else:
+        print("\nThis will install:")
+        print("  • Containerd and nerdctl")
+        print("  • Nydus snapshotter")
+        print("  • FastPull CLI tool (via pip)")
+        print()
 
     if not args.cli_only:
         # Install containerd and nerdctl
@@ -402,24 +444,28 @@ Examples:
 
     # Install CLI
     if not install_cli():
-        print("\nSetup failed: Could not install CLI")
+        print("\nSetup incomplete: CLI installation failed")
+        if not args.cli_only:
+            print("Note: Snapshotters were installed successfully")
         sys.exit(1)
 
     # Verify
     verify_installation()
 
     print("\n" + "="*60)
-    print("Setup Complete!")
+    print("✅ Fastpull installed successfully on your VM")
     print("="*60)
     print("\n📋 Usage:")
+    print("  fastpull --help")
     print("  fastpull run --help")
     print("  fastpull build --help")
-    print("  fastpull push --help")
-    print("\n🔍 Check services:")
-    print("  systemctl status containerd")
-    print("  systemctl status fastpull")
+    print("  fastpull quickstart --help")
+    if not args.cli_only:
+        print("\n🔍 Check services:")
+        print("  systemctl status containerd")
+        print("  systemctl status fastpull")
     print("\n📖 Example:")
-    print("  sudo fastpull run --snapshotter nydus ubuntu:latest")
+    print("  fastpull quickstart tensorrt")
     print("="*60)
 
 

@@ -50,12 +50,14 @@ def parse_gar_url(image: str) -> Optional[Tuple[str, str, str]]:
     Parse GAR image URL to extract location, project, and repository.
 
     Args:
-        image: GAR image URL
+        image: GAR image URL (e.g., us-central1-docker.pkg.dev/project/repo/image:tag)
 
     Returns:
         Tuple of (location, project_id, repository) or None if invalid
     """
-    pattern = r'([^-]+)-docker\.pkg\.dev/([^/]+)/([^/]+)/(.+)'
+    # Pattern: location-docker.pkg.dev/project/repository/image:tag
+    # Use .+? for location to handle hyphens (e.g., us-central1)
+    pattern = r'(.+?)-docker\.pkg\.dev/([^/]+)/([^/]+)'
     match = re.match(pattern, image)
     if match:
         return match.group(1), match.group(2), match.group(3)
