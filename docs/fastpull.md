@@ -131,12 +131,12 @@ Build Docker and snapshotter-optimized images, then push to registry.
 
 ```bash
 # Build Docker and Nydus (default) and push
-fastpull build --image-path ./app --image myapp:latest
+fastpull build --dockerfile-path ./app --repository-url myapp:latest
 
 # Build specific formats
 fastpull build \
-  --image-path ./app \
-  --image myapp:v1 \
+  --dockerfile-path ./app \
+  --repository-url myapp:v1 \
   --format docker,nydus
 ```
 
@@ -144,26 +144,26 @@ fastpull build \
 
 ```bash
 # No cache
-fastpull build --image-path ./app --image myapp:latest --no-cache
+fastpull build --dockerfile-path ./app --repository-url myapp:latest --no-cache
 
 # With build arguments
 fastpull build \
-  --image-path ./app \
-  --image myapp:latest \
+  --dockerfile-path ./app \
+  --repository-url myapp:latest \
   --build-arg VERSION=1.0 \
   --build-arg ENV=prod
 
 # Custom Dockerfile
 fastpull build \
-  --image-path ./app \
-  --image myapp:latest \
+  --dockerfile-path ./app \
+  --repository-url myapp:latest \
   --dockerfile Dockerfile.prod
 ```
 
 #### Supported Flags
 
-- `--image-path` - Path to Dockerfile directory (required)
-- `--image` - Image name and tag (required)
+- `--dockerfile-path` - Path to Dockerfile directory (required)
+- `--repository-url` - Full image reference including registry, repository, and tag (required)
 - `--format` - Comma-separated formats: docker, nydus (default: docker,nydus)
 - `--no-cache` - Build without cache
 - `--build-arg` - Build arguments (repeatable)
@@ -216,8 +216,8 @@ fastpull clean --all --force
 ```bash
 # 1. Build and push images in multiple formats
 fastpull build \
-  --image-path ./my-app \
-  --image 123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:v1.0 \
+  --dockerfile-path ./my-app \
+  --repository-url 123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:v1.0 \
   --format docker,nydus
 
 # 2. Run with benchmarking (FastPull mode, auto-adds -nydus suffix)

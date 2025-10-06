@@ -25,12 +25,12 @@ def add_parser(subparsers):
 
     # Image specification
     parser.add_argument(
-        '--image',
+        '--repository-url',
         required=True,
         help='Full image reference (e.g., account.dkr.ecr.region.amazonaws.com/myapp:v1)'
     )
     parser.add_argument(
-        '--image-path',
+        '--dockerfile-path',
         help='Path to Dockerfile directory (optional - if not provided, assumes image exists)'
     )
 
@@ -87,9 +87,9 @@ def build_command(args):
     """Execute the build command."""
     # Auto-detect registry
     if args.registry == 'auto':
-        args.registry = common.detect_registry_type(args.image)
+        args.registry = common.detect_registry_type(args.repository_url)
         if args.registry == 'unknown':
-            print(f"Error: Could not auto-detect registry from image: {args.image}")
+            print(f"Error: Could not auto-detect registry from image: {args.repository_url}")
             print("Please specify --registry explicitly")
             sys.exit(1)
         print(f"Auto-detected registry: {args.registry}")
@@ -110,7 +110,7 @@ def build_command(args):
         print(f"Using AWS account: {args.account}, region: {args.region}")
 
     if args.registry == 'gar' and not args.repository:
-        parsed = common.parse_gar_url(args.image)
+        parsed = common.parse_gar_url(args.repository_url)
         if parsed:
             args.location, args.project_id, args.repository = parsed
         else:
@@ -132,7 +132,7 @@ def build_command(args):
         sys.exit(1)
 
     # Determine build mode
-    if args.image_path:
+    if args.dockerfile_path:
         # Mode 1: Build from Dockerfile
         build_from_dockerfile(args, formats)
     else:
@@ -235,11 +235,11 @@ def build_from_dockerfile(args, formats: List[str]):
     print("="*60)
 
     # Validate image path
-    if not os.path.isdir(args.image_path):
-        print(f"Error: Directory not found: {args.image_path}")
+    if not os.path.isdir(args.dockerfile_path):
+        print(f"Error: Directory not found: {args.dockerfile_path}")
         sys.exit(1)
 
-    dockerfile_path = os.path.join(args.image_path, args.dockerfile)
+    dockerfile_path = os.path.join(args.dockerfile_path, args.dockerfile)
     if not os.path.isfile(dockerfile_path):
         print(f"Error: Dockerfile not found: {dockerfile_path}")
         sys.exit(1)
@@ -249,22 +249,22 @@ def build_from_dockerfile(args, formats: List[str]):
     # Build and push Docker image
     if 'docker' in formats:
         if build_and_push_docker(args):
-            built_images.append(args.image)
+            built_images.append(args.repository_url)
 
     # Convert to other formats
     if 'nydus' in formats:
-        nydus_image = f"{args.image.rsplit(':', 1)[0]}:{args.image.rsplit(':', 1)[1]}-nydus"
-        if convert_to_nydus(args.image, nydus_image):
+        nydus_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-nydus"
+        if convert_to_nydus(args.repository_url, nydus_image):
             built_images.append(nydus_image)
 
     if 'soci' in formats:
-        soci_image = f"{args.image.rsplit(':', 1)[0]}:{args.image.rsplit(':', 1)[1]}-soci"
-        if convert_to_soci(args.image, soci_image):
+        soci_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-soci"
+        if convert_to_soci(args.repository_url, soci_image):
             built_images.append(soci_image)
 
     if 'estargz' in formats:
-        estargz_image = f"{args.image.rsplit(':', 1)[0]}:{args.image.rsplit(':', 1)[1]}-estargz"
-        if convert_to_estargz(args.image, estargz_image):
+        estargz_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-estargz"
+        if convert_to_estargz(args.repository_url, estargz_image):
             built_images.append(estargz_image)
 
     # Summary
@@ -281,18 +281,18 @@ def convert_existing_image(args, formats: List[str]):
 
     # Convert to requested formats
     if 'nydus' in formats:
-        nydus_image = f"{args.image.rsplit(':', 1)[0]}:{args.image.rsplit(':', 1)[1]}-nydus"
-        if convert_to_nydus(args.image, nydus_image):
+        nydus_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-nydus"
+        if convert_to_nydus(args.repository_url, nydus_image):
             built_images.append(nydus_image)
 
     if 'soci' in formats:
-        soci_image = f"{args.image.rsplit(':', 1)[0]}:{args.image.rsplit(':', 1)[1]}-soci"
-        if convert_to_soci(args.image, soci_image):
+        soci_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-soci"
+        if convert_to_soci(args.repository_url, soci_image):
             built_images.append(soci_image)
 
     if 'estargz' in formats:
-        estargz_image = f"{args.image.rsplit(':', 1)[0]}:{args.image.rsplit(':', 1)[1]}-estargz"
-        if convert_to_estargz(args.image, estargz_image):
+        estargz_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-estargz"
+        if convert_to_estargz(args.repository_url, estargz_image):
             built_images.append(estargz_image)
 
     # Summary
@@ -301,13 +301,13 @@ def convert_existing_image(args, formats: List[str]):
 
 def build_and_push_docker(args) -> bool:
     """Build and push Docker image."""
-    print(f"\n[Docker] Building {args.image}...")
+    print(f"\n[Docker] Building {args.repository_url}...")
 
     # Build
     cmd = [
         'docker', 'build',
-        '-t', args.image,
-        '-f', os.path.join(args.image_path, args.dockerfile)
+        '-t', args.repository_url,
+        '-f', os.path.join(args.dockerfile_path, args.dockerfile)
     ]
 
     if args.no_cache:
@@ -317,20 +317,20 @@ def build_and_push_docker(args) -> bool:
         for build_arg in args.build_arg:
             cmd.extend(['--build-arg', build_arg])
 
-    cmd.append(args.image_path)
+    cmd.append(args.dockerfile_path)
 
     try:
         subprocess.run(cmd, check=True)
-        print(f"[Docker] ✓ Built {args.image}")
+        print(f"[Docker] ✓ Built {args.repository_url}")
     except subprocess.CalledProcessError:
         print(f"[Docker] ✗ Build failed")
         return False
 
     # Push
-    print(f"[Docker] Pushing {args.image}...")
+    print(f"[Docker] Pushing {args.repository_url}...")
     try:
-        subprocess.run(['docker', 'push', args.image], check=True)
-        print(f"[Docker] ✓ Pushed {args.image}")
+        subprocess.run(['docker', 'push', args.repository_url], check=True)
+        print(f"[Docker] ✓ Pushed {args.repository_url}")
         return True
     except subprocess.CalledProcessError:
         print(f"[Docker] ✗ Push failed")

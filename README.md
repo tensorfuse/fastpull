@@ -98,13 +98,13 @@ Build and push from your Dockerfile:
 
 ```bash
 # Build and push image
-fastpull build --registry gar --image-path <PATH-TO-IMAGE-DIR> --image <IMAGE-URL>:<TAG> 
+fastpull build --registry gar --dockerfile-path <PATH-TO-IMAGE-DIR> --repository-url <REPO-URL>:<TAG> 
 
 # Run with fastpull
-fastpull run [--FLAGS] <IMAGE-URL>:<TAG>
+fastpull run [--FLAGS ex. --gpus all] <REPO-URL>:<TAG>
 
 # Run with normal (docker/overlayfs) mode 
-fastpull run --mode normal [--FLAGS] <IMAGE-URL>:<TAG>
+fastpull run --mode normal [--FLAGS] <REPO-URL>:<TAG>
 ```
 
 ## Benchmarking with Fastpull
@@ -115,14 +115,16 @@ To get the run time for your container, you can use either:
 
 Use if the workload has a defined end point
 ```
-fastpull run --benchmark-mode completion ...
+fastpull run --benchmark-mode completion [--FLAGS] <REPO-URL>:<TAG>  
+fastpull run --benchmark-mode completion --mode normal [--FLAGS] <REPO-URL>:<TAG>  
 ```
 
 <b>Server Endpoint Readiness Time</b>
 
 Use if you're preparing a server, and it send with a 200 SUCCESS response once the server is up
 ```
-fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> ...
+fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> [--FLAGS] <REPO-URL>:<TAG>
+fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> --model normal [--FLAGS] <REPO-URL>:<TAG>
 ```
 
 ---
