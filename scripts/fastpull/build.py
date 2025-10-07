@@ -346,7 +346,7 @@ def build_and_push_docker(args) -> bool:
     # Push
     print(f"[Docker] Pushing {args.repository_url}...")
     try:
-        subprocess.run(['docker', 'push', args.repository_url], check=True)
+        subprocess.run(['sudo', 'docker', 'push', args.repository_url], check=True)
         print(f"[Docker] ✓ Pushed {args.repository_url}")
         return True
     except subprocess.CalledProcessError:
