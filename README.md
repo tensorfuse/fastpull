@@ -41,7 +41,8 @@ For more information, check out the [fastpull blog release](https://tensorfuse.i
 
 ## Install fastpull on a VM
 
-> **Note:** For Kubernetes installation, [contact us](mailto:agam@tensorfuse.io) for early access to our helm chart.
+> [!NOTE] 
+> For Kubernetes installation, [contact us](mailto:agam@tensorfuse.io) for early access to our helm chart.
 
 ### Prerequisites
 
@@ -99,9 +100,15 @@ sudo docker login
 
 Build and push from your Dockerfile:
 
+> [!NOTE] 
+> - We support --registry gar, --registry ecr, --registry dockerhub 
+> - For `<TAG>`, you can use any name that's convenient, ex: `v1`, `latest`
+> - FOR `[--FLAGS]` you can use any docker compatible flags, ex. `--gpus all`, `-p PORT:PORT`, `-v <VOLUME_MOUNT>`
+
+
 ```bash
 # Build and push image
-fastpull build --registry gar --dockerfile-path <PATH-TO-IMAGE-DIR> --repository-url <REPO-URL>:<TAG> 
+fastpull build --registry <REGISTRY> --dockerfile-path <DOCKERFILE-PATH> --repository-url <ECR/GAR-REPO-URL>:<TAG> 
 
 # Run with fastpull
 fastpull run [--FLAGS ex. --gpus all] <REPO-URL>:<TAG>
