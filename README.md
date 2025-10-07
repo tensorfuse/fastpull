@@ -103,7 +103,6 @@ Build and push from your Dockerfile:
 > [!NOTE] 
 > - We support --registry gar, --registry ecr, --registry dockerhub 
 > - For `<TAG>`, you can use any name that's convenient, ex: `v1`, `latest`
-> - FOR `[--FLAGS]` you can use any docker compatible flags, ex. `--gpus all`, `-p PORT:PORT`, `-v <VOLUME_MOUNT>`
 
 
 ```bash
@@ -132,8 +131,10 @@ fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<E
 ```
 
 > [!NOTE]
-> - When running for Readiness, you must publish the right port ex. -p 8000: 8000 and use --readiness-endpoint localhost:8000/health
+> - When running for Readiness, you must publish the right port ex. `-p 8000:8000` and use `--readiness-endpoint localhost:8000/health`
 > - Use --mode normal to run normal docker, running without this flag runs with fastpull optimisations
+> - For `[--FLAGS]` you can use any docker compatible flags, ex. `--gpus all`, `-p PORT:PORT`, `-v <VOLUME_MOUNT>`
+> - If using GPUs, make sure you add `--gpus all` as a fastpull run flag
 
 #### Cleaning after a run
 
