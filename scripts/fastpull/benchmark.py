@@ -89,12 +89,17 @@ class ContainerBenchmark:
         if self.benchmark_mode != 'readiness' or not self.readiness_endpoint:
             return True
 
-        print(f"Polling {self.readiness_endpoint} for readiness...")
+        # Ensure endpoint has protocol prefix
+        endpoint = self.readiness_endpoint
+        if not endpoint.startswith(('http://', 'https://')):
+            endpoint = f'http://{endpoint}'
+
+        print(f"Polling {endpoint} for readiness...")
         end_time = time.time() + timeout
 
         while time.time() < end_time:
             try:
-                response = urlopen(self.readiness_endpoint, timeout=5)
+                response = urlopen(endpoint, timeout=5)
                 if response.getcode() == 200:
                     elapsed = time.time() - self.start_time
                     self.metrics['readiness_time'] = elapsed
