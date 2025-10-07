@@ -109,12 +109,6 @@ Build and push from your Dockerfile:
 ```bash
 # Build and push image
 fastpull build --registry <REGISTRY> --dockerfile-path <DOCKERFILE-PATH> --repository-url <ECR/GAR-REPO-URL>:<TAG> 
-
-# Run with fastpull
-fastpull run [--FLAGS ex. --gpus all] <REPO-URL>:<TAG>
-
-# Run with normal (docker/overlayfs) mode 
-fastpull run --mode normal [--FLAGS] <REPO-URL>:<TAG>
 ```
 
 ## Benchmarking with Fastpull
@@ -136,6 +130,10 @@ Use if you're preparing a server, and it send with a 200 SUCCESS response once t
 fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> [--FLAGS] <REPO-URL>:<TAG>
 fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> --model normal [--FLAGS] <REPO-URL>:<TAG>
 ```
+
+> [!NOTE]
+> - When running for Readiness, you must publish the right port ex. -p 8000: 8000 and use --readiness-endpoint localhost:8000/health
+> - Use --mode normal to run normal docker, running without this flag runs with fastpull optimisations
 
 #### Cleaning after a run
 
