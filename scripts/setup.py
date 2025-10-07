@@ -31,6 +31,50 @@ def run_command(cmd, check=True, capture_output=False, shell=False):
         raise
 
 
+def detect_package_manager():
+    """Detect the system package manager."""
+    # Check for apt (Debian/Ubuntu)
+    if os.path.exists('/usr/bin/apt-get') or os.path.exists('/usr/bin/apt'):
+        return 'apt'
+    # Check for yum (RHEL/CentOS 7)
+    elif os.path.exists('/usr/bin/yum'):
+        return 'yum'
+    # Check for dnf (RHEL/CentOS 8+/Fedora)
+    elif os.path.exists('/usr/bin/dnf'):
+        return 'dnf'
+    else:
+        return None
+
+
+def install_system_dependencies():
+    """Install required system packages (python3-venv, wget)."""
+    pkg_mgr = detect_package_manager()
+
+    if not pkg_mgr:
+        print("⚠ Warning: Could not detect package manager (apt/yum/dnf)")
+        print("Please manually install: python3-venv, wget")
+        return False
+
+    print(f"Detected package manager: {pkg_mgr}")
+    print("Installing system dependencies (python3-venv, wget)...")
+
+    try:
+        if pkg_mgr == 'apt':
+            # Update package list and install dependencies
+            run_command(['apt-get', 'update', '-qq'], check=True)
+            run_command(['apt-get', 'install', '-y', 'python3-venv', 'wget'], check=True)
+        elif pkg_mgr == 'yum':
+            run_command(['yum', 'install', '-y', 'python3-venv', 'wget'], check=True)
+        elif pkg_mgr == 'dnf':
+            run_command(['dnf', 'install', '-y', 'python3-venv', 'wget'], check=True)
+
+        print("✓ System dependencies installed")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"✗ Failed to install system dependencies: {e}")
+        return False
+
+
 def check_root():
     """Check if running as root."""
     if os.geteuid() != 0:
@@ -115,17 +159,30 @@ def install_nydus():
     install_script = """
 set -e
 
-NYDUS_VERSION="v2.3.6"
-echo "Downloading Nydus snapshotter ${NYDUS_VERSION}..."
+NYDUS_SNAPSHOTTER_VERSION="0.15.3"
+echo "Downloading Nydus Snapshotter v${NYDUS_SNAPSHOTTER_VERSION}..."
 
-# Download Nydus
+# Download Nydus Snapshotter
 cd /tmp
-wget -O nydus.tgz https://github.com/dragonflyoss/nydus/releases/download/${NYDUS_VERSION}/nydus-static-${NYDUS_VERSION}-linux-amd64.tgz
+wget https://github.com/containerd/nydus-snapshotter/releases/download/v${NYDUS_SNAPSHOTTER_VERSION}/nydus-snapshotter-v${NYDUS_SNAPSHOTTER_VERSION}-linux-amd64.tar.gz
 
-# Extract to /usr/local/bin
+# Extract and install
+tar -xzf nydus-snapshotter-v${NYDUS_SNAPSHOTTER_VERSION}-linux-amd64.tar.gz
+cp bin/containerd-nydus-grpc /usr/local/bin/
+chmod +x /usr/local/bin/containerd-nydus-grpc
+
+# Also install nydusd (required by snapshotter)
+NYDUS_VERSION="v2.3.6"
+echo "Downloading Nydus tools ${NYDUS_VERSION}..."
+wget -O nydus.tgz https://github.com/dragonflyoss/nydus/releases/download/${NYDUS_VERSION}/nydus-static-${NYDUS_VERSION}-linux-amd64.tgz
 tar xzf nydus.tgz
-mv nydus-static/* /usr/local/bin/
-rm -rf nydus-static nydus.tgz
+cp nydus-static/nydusd /usr/local/bin/
+cp nydus-static/nydus-image /usr/local/bin/
+cp nydus-static/nydusify /usr/local/bin/
+chmod +x /usr/local/bin/nydusd /usr/local/bin/nydus-image /usr/local/bin/nydusify
+
+# Clean up
+rm -rf bin nydus-snapshotter-v${NYDUS_SNAPSHOTTER_VERSION}-linux-amd64.tar.gz nydus-static nydus.tgz
 
 echo "✓ Nydus binaries installed"
 """
@@ -428,6 +485,18 @@ Examples:
         print("  • FastPull CLI tool (via pip)")
         print()
 
+    # Install system dependencies first
+    print("\n" + "="*60)
+    print("Installing System Dependencies")
+    print("="*60)
+    if not install_system_dependencies():
+        print("\n⚠ Warning: System dependencies installation had issues")
+        print("Continuing anyway, but you may encounter errors...")
+
+    # Track installation status
+    success = True
+    warnings = []
+
     if not args.cli_only:
         # Install containerd and nerdctl
         if not install_containerd_nerdctl():
@@ -438,22 +507,30 @@ Examples:
         # Install Nydus snapshotter
         if not install_nydus():
             print("\n⚠ Warning: Nydus installation failed")
-
-        # Configure containerd for Nydus
-        configure_containerd_for_nydus()
+            success = False
+            warnings.append("Nydus snapshotter installation failed")
+        else:
+            # Only configure containerd if Nydus installed successfully
+            configure_containerd_for_nydus()
 
     # Install CLI
     if not install_cli():
         print("\nSetup incomplete: CLI installation failed")
         if not args.cli_only:
-            print("Note: Snapshotters were installed successfully")
+            print("Note: Snapshotters may have been installed")
         sys.exit(1)
 
     # Verify
     verify_installation()
 
     print("\n" + "="*60)
-    print("✅ Fastpull installed successfully on your VM")
+    if success:
+        print("✅ Fastpull installed successfully on your VM")
+    else:
+        print("⚠️  Fastpull installed with warnings")
+        print("\nWarnings:")
+        for warning in warnings:
+            print(f"  • {warning}")
     print("="*60)
     print("\n📋 Usage:")
     print("  fastpull --help")
