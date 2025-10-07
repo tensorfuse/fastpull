@@ -125,12 +125,6 @@ def build_command(args):
             print(f"Error: Invalid format '{fmt}'. Valid: {', '.join(valid_formats)}")
             sys.exit(1)
 
-    # Authenticate with registry
-    print(f"\nAuthenticating with {args.registry}...")
-    if not authenticate_registry(args):
-        print("Error: Authentication failed")
-        sys.exit(1)
-
     # Determine build mode
     if args.dockerfile_path:
         # Mode 1: Build from Dockerfile
