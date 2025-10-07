@@ -322,7 +322,7 @@ def build_and_push_docker(args) -> bool:
 
     # Build
     cmd = [
-        'docker', 'build',
+        'sudo', 'docker', 'build',
         '-t', args.repository_url,
         '-f', os.path.join(args.dockerfile_path, args.dockerfile)
     ]
