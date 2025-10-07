@@ -91,7 +91,7 @@ aws ecr get-login-password --region us-east-1 | sudo nerdctl login --username AW
 For GAR:
 ```
 gcloud auth login;
-gcloud auth print-access-token | sudo nerdctl login <REGION>.pkg.dev --username oauth2accesstoken --password-stdin
+gcloud auth print-access-token | sudo nerdctl login <REGION>-docker.pkg.dev --username oauth2accesstoken --password-stdin
 ```
 For Dockerhub: 
 ```
