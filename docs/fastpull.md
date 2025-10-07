@@ -4,13 +4,23 @@ The new unified `fastpull` command-line interface for building and running conta
 
 ## Installation
 
+The setup script automatically detects your OS (Ubuntu/Debian/RHEL/CentOS/Fedora) and installs all dependencies including `python3-venv` and `wget`.
+
 ```bash
-# Install fastpull CLI to /usr/local/bin
+# Full installation (containerd + Nydus + CLI)
 sudo python3 scripts/setup.py
+
+# Install only CLI (if containerd/Nydus already installed)
+sudo python3 scripts/setup.py --cli-only
 
 # Verify installation
 fastpull --version
 ```
+
+**Supported Package Managers:**
+- `apt` (Ubuntu/Debian)
+- `yum` (RHEL/CentOS 7)
+- `dnf` (RHEL/CentOS 8+/Fedora)
 
 ## Commands
 
@@ -38,11 +48,11 @@ sudo fastpull quickstart sglang
 sudo fastpull quickstart sglang --output-dir ./results
 ```
 
-Each quickstart automatically runs the same workload with:
-1. FastPull mode (Nydus snapshotter)
-2. Normal mode (OverlayFS snapshotter)
-
-With readiness benchmarking to measure startup performance.
+Each quickstart automatically:
+1. Runs with FastPull mode (Nydus snapshotter)
+2. Runs with Normal mode (OverlayFS snapshotter)
+3. Measures readiness benchmarking for startup performance
+4. **Auto-cleans containers and images after completion**
 
 ---
 
@@ -242,13 +252,26 @@ When using `--benchmark-mode`, fastpull tracks:
    - **Completion mode**: Waits for container to exit
 
 Example output:
+
+**FastPull mode (Nydus):**
 ```
 ==================================================
-BENCHMARK SUMMARY
+FASTPULL BENCHMARK SUMMARY
 ==================================================
 Time to Container Start: 2.34s
 Time to Readiness:       45.67s
 Total Elapsed Time:      48.01s
+==================================================
+```
+
+**Normal mode (OverlayFS):**
+```
+==================================================
+NORMAL BENCHMARK SUMMARY
+==================================================
+Time to Container Start: 13.64s
+Time to Readiness:       387.77s
+Total Elapsed Time:      387.77s
 ==================================================
 ```
 

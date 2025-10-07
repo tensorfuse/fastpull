@@ -74,6 +74,9 @@ fastpull quickstart vllm
 fastpull quickstart sglang 
 ```
 
+Each of these will run two times, once with fastpull optimisations, and one the way docker runs it
+After the quickstart runs are complete, we also run `fastpull clean --all` which cleans up the downloaded images. 
+
 <b>Option B: Build custom images</b>
 
 First, authenticate with your registry 
@@ -125,6 +128,13 @@ Use if you're preparing a server, and it send with a 200 SUCCESS response once t
 ```
 fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> [--FLAGS] <REPO-URL>:<TAG>
 fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> --model normal [--FLAGS] <REPO-URL>:<TAG>
+```
+
+#### Cleaning after a run
+
+To get the right cold start numbers, run the clean command after each run:
+```
+fastpull clean --all
 ```
 
 ---

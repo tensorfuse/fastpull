@@ -192,7 +192,8 @@ def run_with_benchmark(cmd: List[str], args):
     bench = benchmark.ContainerBenchmark(
         container_id='',  # Will be set after container starts
         benchmark_mode=args.benchmark_mode,
-        readiness_endpoint=args.readiness_endpoint
+        readiness_endpoint=args.readiness_endpoint,
+        mode=args.mode
     )
 
     # Start event monitoring BEFORE starting the container

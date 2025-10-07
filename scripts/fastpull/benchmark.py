@@ -18,7 +18,7 @@ class ContainerBenchmark:
     """Track container startup and readiness metrics."""
 
     def __init__(self, container_id: str, benchmark_mode: str = 'none',
-                 readiness_endpoint: Optional[str] = None):
+                 readiness_endpoint: Optional[str] = None, mode: str = 'normal'):
         """
         Initialize benchmark tracker.
 
@@ -26,10 +26,12 @@ class ContainerBenchmark:
             container_id: Container ID to track
             benchmark_mode: 'none', 'completion', or 'readiness'
             readiness_endpoint: HTTP endpoint for readiness checks
+            mode: 'nydus' or 'normal' (for display purposes)
         """
         self.container_id = container_id
         self.benchmark_mode = benchmark_mode
         self.readiness_endpoint = readiness_endpoint
+        self.mode = mode
         self.metrics: Dict[str, float] = {}
         self.start_time = time.time()
         self._event_thread: Optional[threading.Thread] = None
@@ -148,8 +150,9 @@ class ContainerBenchmark:
         if self.benchmark_mode == 'none':
             return
 
+        mode_label = "FASTPULL" if self.mode == 'nydus' else "NORMAL"
         print("\n" + "="*50)
-        print("BENCHMARK SUMMARY")
+        print(f"{mode_label} BENCHMARK SUMMARY")
         print("="*50)
 
         if 'container_start_time' in self.metrics:

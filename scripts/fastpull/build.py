@@ -234,11 +234,28 @@ def build_from_dockerfile(args, formats: List[str]):
     print("MODE: Build from Dockerfile")
     print("="*60)
 
-    # Validate image path
+    # Auto-detect if dockerfile_path is a file or directory
+    if os.path.isfile(args.dockerfile_path):
+        # User provided a file path, extract directory and filename
+        dockerfile_dir = os.path.dirname(args.dockerfile_path)
+        dockerfile_name = os.path.basename(args.dockerfile_path)
+
+        # Use current directory if no directory in path
+        if not dockerfile_dir:
+            dockerfile_dir = '.'
+
+        # Override the dockerfile argument with detected filename
+        args.dockerfile = dockerfile_name
+        args.dockerfile_path = dockerfile_dir
+
+        print(f"Detected Dockerfile: {dockerfile_name} in {dockerfile_dir}")
+
+    # Validate directory exists
     if not os.path.isdir(args.dockerfile_path):
         print(f"Error: Directory not found: {args.dockerfile_path}")
         sys.exit(1)
 
+    # Construct full Dockerfile path
     dockerfile_path = os.path.join(args.dockerfile_path, args.dockerfile)
     if not os.path.isfile(dockerfile_path):
         print(f"Error: Dockerfile not found: {dockerfile_path}")

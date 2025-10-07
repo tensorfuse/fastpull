@@ -70,3 +70,12 @@ def run_quickstart(args):
     if args.output_dir:
         print(f"Results: {args.output_dir}/")
     print(f"{'='*60}\n")
+
+    # Auto cleanup after benchmarks complete
+    print("\nCleaning up containers and images...")
+    cleanup_cmd = ['fastpull', 'clean', '--all', '--force']
+    try:
+        subprocess.run(cleanup_cmd, check=False)  # Don't fail if cleanup has issues
+    except Exception as e:
+        print(f"Warning: Cleanup had issues: {e}")
+    print("Cleanup complete!\n")
