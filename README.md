@@ -47,7 +47,7 @@ For more information, check out the [fastpull blog release](https://tensorfuse.i
 ### Prerequisites
 
 - VM Image: Works on Debian 12+, Ubuntu, AL2023 VMs with GPU, mileage on other AMIs may vary.
-- Python>=3.10, pip, Docker, CUDA drivers, Nvidia Container Toolkit installed
+- Python>=3.10, pip, python3-venv, [Docker](https://docs.docker.com/engine/install/), [CUDA drivers](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/), [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed
 
 ### Installation Steps
 
