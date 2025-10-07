@@ -10,7 +10,7 @@
 <a href="https://join.slack.com/t/tensorfusecommunity/shared_invite/zt-30r6ik3dz-Rf7nS76vWKOu6DoKh5Cs5w"><img src="assets/button_join-our-slack.png" width="150"></a>
 <a href="https://tensorfuse.io/docs/blogs/blog"><img src="assets/button_blog.png" width="150"></a>
 
-[Installation](#install-fastpull-on-a-vm) • [Results](#understanding-test-results)
+[Installation](#install-fastpull-on-a-vm) • [Results](#understanding-test-results) • [Detailed Usage](docs/fastpull.md)
 
 </div>
 
@@ -41,13 +41,13 @@ For more information, check out the [fastpull blog release](https://tensorfuse.i
 
 ## Install fastpull on a VM
 
-> **Note:** For Kubernetes installation, [contact us](mailto:agam@tensorfuse.io) for early access to our helm chart.
+> [!NOTE] 
+> For Kubernetes installation, [contact us](mailto:agam@tensorfuse.io) for early access to our helm chart.
 
 ### Prerequisites
 
-- Debian or Ubuntu VM with GPU
-- Docker and CUDA driver installed
-- Registry authentication configured (GAR, ECR, etc.)
+- VM Image: Works on Debian 12+, Ubuntu, AL2023 VMs with GPU, mileage on other AMIs may vary.
+- Python>=3.10, pip, python3-venv, [Docker](https://docs.docker.com/engine/install/), [CUDA drivers](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/), [Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed
 
 ### Installation Steps
 
@@ -56,10 +56,7 @@ For more information, check out the [fastpull blog release](https://tensorfuse.i
 ```bash
 git clone https://github.com/tensorfuse/fastpull.git
 cd fastpull/
-sudo python3 scripts/install_snapshotters.py
-
-# Verify installation
-sudo systemctl status nydus-snapshotter-fuse.service
+sudo python3 scripts/setup.py
 ```
 
 You should see: **"✅ Fastpull installed successfully on your VM"**
@@ -73,62 +70,94 @@ Fastpull requires your images to be in a special format. You can either choose f
 Test with vLLM, TensorRT, or Sglang:
 
 ```bash
-python3 scripts/benchmark/test-bench-vllm.py \
-  --image public.ecr.aws/s6z9f6e5/tensorfuse/fastpull/vllm:latest-nydus \
-  --snapshotter nydus
+fastpull quickstart tensorrt
+fastpull quickstart vllm 
+fastpull quickstart sglang 
 ```
+
+Each of these will run two times, once with fastpull optimisations, and one the way docker runs it
+After the quickstart runs are complete, we also run `fastpull clean --all` which cleans up the downloaded images. 
 
 <b>Option B: Build custom images</b>
 
-Build from your Dockerfile:
+First, authenticate with your registry 
+For ECR: 
+```
+aws configure; 
+aws ecr get-login-password --region us-east-1 | sudo nerdctl login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
 
-```bash
-# Build image
-python3 scripts/build.py --dockerfile <path_to_your_dockerfile>
-
-# Push to registry
-python3 scripts/push.py \
-  --registry_type <ecr/gar> \
-  --account_id <YOUR_ACCOUNT_ID>
-
-# Run with fastpull
-python3 scripts/fastpull.py --image <image_tag>
 ```
 
+For GAR:
+```
+gcloud auth login;
+gcloud auth print-access-token | sudo nerdctl login <REGION>-docker.pkg.dev --username oauth2accesstoken --password-stdin
+```
+For Dockerhub: 
+```
+sudo docker login
+```
+
+Build and push from your Dockerfile:
+
+> [!NOTE] 
+> - We support --registry gar, --registry ecr, --registry dockerhub 
+> - For `<TAG>`, you can use any name that's convenient, ex: `v1`, `latest`
+> - FOR `[--FLAGS]` you can use any docker compatible flags, ex. `--gpus all`, `-p PORT:PORT`, `-v <VOLUME_MOUNT>`
+
+
+```bash
+# Build and push image
+fastpull build --registry <REGISTRY> --dockerfile-path <DOCKERFILE-PATH> --repository-url <ECR/GAR-REPO-URL>:<TAG> 
+```
+
+## Benchmarking with Fastpull
+
+To get the run time for your container, you can use either: 
+
+<b>Completion Time</b>
+
+Use if the workload has a defined end point
+```
+fastpull run --benchmark-mode completion [--FLAGS] <REPO-URL>:<TAG>  
+fastpull run --benchmark-mode completion --mode normal [--FLAGS] <REPO-URL>:<TAG>  
+```
+
+<b>Server Endpoint Readiness Time</b>
+
+Use if you're preparing a server, and it send with a 200 SUCCESS response once the server is up
+```
+fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> [--FLAGS] <REPO-URL>:<TAG>
+fastpull run --benchmark-mode readiness --readiness-endpoint localhost:<PORT>/<ENDPOINT> --model normal [--FLAGS] <REPO-URL>:<TAG>
+```
+
+> [!NOTE]
+> - When running for Readiness, you must publish the right port ex. -p 8000: 8000 and use --readiness-endpoint localhost:8000/health
+> - Use --mode normal to run normal docker, running without this flag runs with fastpull optimisations
+
+#### Cleaning after a run
+
+To get the right cold start numbers, run the clean command after each run:
+```
+fastpull clean --all
+```
 
 ---
 
 ## Understanding Test Results
 
-Results show timing breakdown across startup phases:
-
-- **Time to first log:** Container start to entrypoint execution
-- **First log to model download start:** Initialization time
-- **Model download time:** Downloading weights (e.g., Qwen-3-8b, 16GB)
-- **Model load time:** Loading weights into GPU
-- **CUDA compilation/graph capture:** Optimization phase
-- **Total end-to-end time:** Container start to server ready
+Results show the startup and completion/readiness times:
 
 <b>Example Output</b>
 
 ```bash
-=== VLLM TIMING SUMMARY ===
-Container Startup Time:     2.145s
-Container to First Log:     15.234s
-Engine Initialization:      45.123s
-Weights Download Start:     67.890s
-Weights Download Complete: 156.789s
-Weights Loaded:            198.456s
-Graph Capture Complete:    245.678s
-Server Ready:              318.435s
-Total Test Time:           325.678s
-
-BREAKDOWN:
-Container to First Log:                      15.234s
-First Log to Weight Download Start:          52.656s  
-Weight Download Start to Complete:           88.899s
-Weight Download Complete to Weights Loaded:  41.667s
-Weights Loaded to Server Ready:             119.979s
+==================================================
+BENCHMARK SUMMARY
+==================================================
+Time to Container Start: 141.295s
+Time to Readiness:       329.367s
+Total Elapsed Time:      329.367s
+==================================================
 ```
 
 ---
