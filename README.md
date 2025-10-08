@@ -6,9 +6,8 @@
 <div align="center">
 
 # Start massive AI/ML container images 10x faster with lazy-loading snapshotter
-
-<a href="https://join.slack.com/t/tensorfusecommunity/shared_invite/zt-30r6ik3dz-Rf7nS76vWKOu6DoKh5Cs5w"><img src="assets/button_join-our-slack.png" width="150"></a>
-<a href="https://tensorfuse.io/docs/blogs/blog"><img src="assets/button_blog.png" width="150"></a>
+[![Join Slack](https://img.shields.io/badge/Join_Slack-2EB67D?style=for-the-badge&logo=slack&logoColor=white)](https://join.slack.com/t/tensorfusecommunity/shared_invite/zt-30r6ik3dz-Rf7nS76vWKOu6DoKh5Cs5w)
+[![Read our Blog](https://img.shields.io/badge/Read_our_Blog-ff9800?style=for-the-badge&logo=RSS&logoColor=white)](https://tensorfuse.io/docs/blogs/blog)
 
 [Installation](#install-fastpull-on-a-vm) • [Results](#understanding-test-results) • [Detailed Usage](docs/fastpull.md)
 
