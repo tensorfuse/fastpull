@@ -28,20 +28,21 @@ AI/ML container images like CUDA, vLLM, and sglang are large (10 GB+). Tradition
 
 #### The Solution
 
-Fastpull uses lazy-loading to pull only the files needed to start the container, then fetches remaining layers on demand. This accelerates start times by 10x. See the results below: 
+Fastpull uses lazy-loading to pull only the files needed to start the container, then fetches remaining layers on demand. This accelerates start times by 10x. See the results below:
 
 <div align="center">
   <img src="assets/time_first_log_tensorrt.png" alt="benchmark" width="530" />
 </div>
+
+You can now:
+- [Install Fastpull on a VM](#install-fastpull-on-a-vm)
+- [Install Fastpull on Kubernetes](#install-fastpull-on-a-kubernetes-cluster)
 
 For more information, check out the [fastpull blog release](https://tensorfuse.io/docs/blogs/reducing_gpu_cold_start).
 
 ---
 
 ## Install fastpull on a VM
-
-> [!NOTE] 
-> For Kubernetes installation, [contact us](mailto:agam@tensorfuse.io) for early access to our helm chart.
 
 ### Prerequisites
 
@@ -62,27 +63,27 @@ You should see: **"✅ Fastpull installed successfully on your VM"**
 
 **2. Run containers**
 
-Fastpull requires your images to be in a special format. You can either choose from our template of pre-built images like vLLM, TensorRT, and SGlang or build your own using a Dockerfile. 
+Fastpull requires your images to be in a special format. You can either choose from our template of pre-built images like vLLM, TensorRT, and SGlang or build your own using a Dockerfile.
 
-<b>Option A: Use pre-built images</b>
+#### Use pre-built images
 
 Test with vLLM, TensorRT, or Sglang:
 
 ```bash
 fastpull quickstart tensorrt
-fastpull quickstart vllm 
-fastpull quickstart sglang 
+fastpull quickstart vllm
+fastpull quickstart sglang
 ```
 
 Each of these will run two times, once with fastpull optimisations, and one the way docker runs it
-After the quickstart runs are complete, we also run `fastpull clean --all` which cleans up the downloaded images. 
+After the quickstart runs are complete, we also run `fastpull clean --all` which cleans up the downloaded images.
 
-<b>Option B: Build custom images</b>
+#### Build custom images
 
-First, authenticate with your registry 
-For ECR: 
+First, authenticate with your registry
+For ECR:
 ```
-aws configure; 
+aws configure;
 aws ecr get-login-password --region us-east-1 | sudo nerdctl login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
 
 ```
@@ -92,33 +93,33 @@ For GAR:
 gcloud auth login;
 gcloud auth print-access-token | sudo nerdctl login <REGION>-docker.pkg.dev --username oauth2accesstoken --password-stdin
 ```
-For Dockerhub: 
+For Dockerhub:
 ```
 sudo docker login
 ```
 
 Build and push from your Dockerfile:
 
-> [!NOTE] 
-> - We support --registry gar, --registry ecr, --registry dockerhub 
+> [!NOTE]
+> - We support --registry gar, --registry ecr, --registry dockerhub
 > - For `<TAG>`, you can use any name that's convenient, ex: `v1`, `latest`
 
 
 ```bash
 # Build and push image
-fastpull build --registry <REGISTRY> --dockerfile-path <DOCKERFILE-PATH> --repository-url <ECR/GAR-REPO-URL>:<TAG> 
+fastpull build --registry <REGISTRY> --dockerfile-path <DOCKERFILE-PATH> --repository-url <ECR/GAR-REPO-URL>:<TAG>
 ```
 
-## Benchmarking with Fastpull
+### Benchmarking with Fastpull
 
-To get the run time for your container, you can use either: 
+To get the run time for your container, you can use either:
 
 <b>Completion Time</b>
 
 Use if the workload has a defined end point
 ```
-fastpull run --benchmark-mode completion [--FLAGS] <REPO-URL>:<TAG>  
-fastpull run --benchmark-mode completion --mode normal [--FLAGS] <REPO-URL>:<TAG>  
+fastpull run --benchmark-mode completion [--FLAGS] <REPO-URL>:<TAG>
+fastpull run --benchmark-mode completion --mode normal [--FLAGS] <REPO-URL>:<TAG>
 ```
 
 <b>Server Endpoint Readiness Time</b>
@@ -142,9 +143,7 @@ To get the right cold start numbers, run the clean command after each run:
 fastpull clean --all
 ```
 
----
-
-## Understanding Test Results
+### Understanding Test Results
 
 Results show the startup and completion/readiness times:
 
@@ -159,6 +158,63 @@ Time to Readiness:       329.367s
 Total Elapsed Time:      329.367s
 ==================================================
 ```
+
+---
+
+## Install fastpull on a Kubernetes Cluster
+
+### Prerequisites
+- Tested on GKE
+- Tested with COS Operating System for the nodes
+
+### Installation Steps
+1. In your K8s cluster, create a GPU Nodepoool
+2. Install Nvidia GPU drivers. For COS:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded-latest.yaml
+```
+3. Install containerd config updater daemonset: `kubectl apply -f https://raw.githubusercontent.com/tensorfuse/nydus-gke/main/containerd-daemonset.yaml`
+4. Install the [Helm Chart](oci://registry-1.docker.io/tensorfuse/nydus-snapshotter). For COS:
+```bash
+helm upgrade --install nydus-snapshotter oci://registry-1.docker.io/tensorfuse/nydus-snapshotter \
+--version 0.0.10-gke-helm \
+--create-namespace \
+--namespace nydus-snapshotter \
+--set 'tolerations[0].key=nvidia.com/gpu' \
+--set 'tolerations[0].operator=Equal' \
+--set 'tolerations[0].value=present' \
+--set 'tolerations[0].effect=NoSchedule' \
+--set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key=cloud.google.com/gke-accelerator' \
+--set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator=Exists'
+```
+5. Create a fastpull lazy loading image. On a Pod or a standalone VM, [install fastpull][#install-fastpull] and [build your image](#build-custom-images)
+6. Create the pod spec for image we created. For COS, use a pod spec like this:
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-test-a100-nydus
+spec:
+  tolerations:
+    - operator: Exists
+  nodeSelector:
+    cloud.google.com/gke-accelerator: nvidia-tesla-a100 # Use your GPU Type
+  runtimeClassName: runc-nydus
+  containers:
+  - name: debug-container
+    image: IMAGE_PATH:TAG
+    resources:
+      limits:
+        nvidia.com/gpu: 1
+    env:
+    - name: LD_LIBRARY_PATH
+      value: /usr/local/cuda/lib64:/usr/local/nvidia/lib64
+```
+7. Run a pod with this spec:
+```bash
+kubectl apply -f <POD-SPECFILE>.yaml
+```
+
 
 ---
 
