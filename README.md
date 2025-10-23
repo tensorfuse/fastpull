@@ -168,7 +168,7 @@ Total Elapsed Time:      329.367s
 - Tested with COS Operating System for the nodes
 
 ### Installation
-1. In your K8s cluster, create a GPU Nodepoool
+1. In your K8s cluster, create a GPU Nodepoool. For GKE, ensure Workload Identity is enabled on your cluster
 2. Install Nvidia GPU drivers. For COS:
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded-latest.yaml
@@ -187,7 +187,7 @@ helm upgrade --install nydus-snapshotter oci://registry-1.docker.io/tensorfuse/n
 --set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key=cloud.google.com/gke-accelerator' \
 --set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator=Exists'
 ```
-5. Create a fastpull lazy loading image. On a Pod or a standalone VM, [install fastpull][#installation-steps] and [build your image](#build-custom-images)
+5. On a Pod or a standalone VM, [install fastpull](#installation-steps) and [build your image](#build-custom-images)
 6. Create the pod spec for image we created. For COS, use a pod spec like this:
 ```yaml
 apiVersion: v1
