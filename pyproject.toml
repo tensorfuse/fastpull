@@ -10,9 +10,9 @@ readme = "README.md"
 requires-python = ">=3.7"
 license = {text = "MIT"}
 authors = [
-    {name = "TensorFuse", email = "team@tensorfuse.ai"}
+    {name = "TensorFuse", email = "saurabh@tensorfuse.io"}
 ]
-keywords = ["containers", "docker", "nydus", "snapshotter", "ml", "ai"]
+keywords = ["containers", "docker", "fastpull", "snapshotter", "ml", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
