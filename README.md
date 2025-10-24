@@ -209,7 +209,7 @@ spec:
         nvidia.com/gpu: 1
     env:
     - name: LD_LIBRARY_PATH
-      value: /usr/local/cuda/lib64:/usr/local/nvidia/lib64
+      value: /usr/local/cuda/lib64:/usr/local/nvidia/lib64 # NOTE: This path may vary depending on the base image
 ```
 7. Run a pod with this spec:
 ```bash
