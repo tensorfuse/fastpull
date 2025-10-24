@@ -169,7 +169,7 @@ Total Elapsed Time:      329.367s
 - Tested with COS Operating System for the nodes
 
 ### Installation
-1. In your K8s cluster, create a GPU Nodepoool. For GKE, ensure Workload Identity is enabled on your cluster
+1. In your K8s cluster, create a GPU Nodepool. For GKE, ensure Workload Identity is enabled on your cluster
 2. Install Nvidia GPU drivers. For COS:
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded-latest.yaml
