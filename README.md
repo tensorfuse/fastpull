@@ -103,6 +103,7 @@ Build and push from your Dockerfile:
 > [!NOTE]
 > - We support --registry gar, --registry ecr, --registry dockerhub
 > - For `<TAG>`, you can use any name that's convenient, ex: `v1`, `latest`
+> - 2 images are created, one is the overlayfs with tag:`<TAG>` and another is the fastpull image with tag: `<TAG>-fastpull`
 
 
 ```bash
@@ -187,7 +188,7 @@ helm upgrade --install fastpull-snapshotter oci://registry-1.docker.io/tensorfus
 --set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key=cloud.google.com/gke-accelerator' \
 --set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator=Exists'
 ```
-5. On a Pod or a standalone VM, [install fastpull](#installation-steps) and [build your image](#build-custom-images)
+5. On a standalone VM, preferably using Ubuntu os, [install fastpull](#installation-steps) and [build your image](#build-custom-images)
 6. Create the pod spec for image we created. For COS, use a pod spec like this:
 ```yaml
 apiVersion: v1
@@ -202,7 +203,7 @@ spec:
   runtimeClassName: runc-fastpull
   containers:
   - name: debug-container
-    image: IMAGE_PATH:TAG
+    image: IMAGE_PATH:<TAG>-fastpull # USE FASTPULL IMAGE
     resources:
       limits:
         nvidia.com/gpu: 1

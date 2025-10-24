@@ -26,7 +26,7 @@ def add_parser(subparsers):
         '--mode',
         choices=['nydus', 'normal'],
         default='nydus',
-        help='Run mode: nydus (default, adds -nydus suffix) or normal (overlayfs, no suffix)'
+        help='Run mode: nydus (default, adds -fastpull suffix) or normal (overlayfs, no suffix)'
     )
 
     # Benchmarking arguments
@@ -81,13 +81,13 @@ def run_command(args):
     # Determine snapshotter and modify image tag based on mode
     if args.mode == 'nydus':
         args.snapshotter = 'nydus'
-        # Add -nydus suffix to image tag if not already present
+        # Add -fastpull suffix to image tag if not already present
         if ':' in args.image:
             base, tag = args.image.rsplit(':', 1)
-            if not tag.endswith('-nydus'):
-                args.image = f"{base}:{tag}-nydus"
+            if not tag.endswith('-fastpull'):
+                args.image = f"{base}:{tag}-fastpull"
         else:
-            args.image = f"{args.image}:latest-nydus"
+            args.image = f"{args.image}:latest-fastpull"
     else:  # normal mode
         args.snapshotter = 'overlayfs'
         # Use image as-is for normal mode

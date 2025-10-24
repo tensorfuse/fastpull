@@ -264,7 +264,7 @@ def build_from_dockerfile(args, formats: List[str]):
 
     # Convert to other formats
     if 'nydus' in formats:
-        nydus_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-nydus"
+        nydus_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-fastpull"
         if convert_to_nydus(args.repository_url, nydus_image):
             built_images.append(nydus_image)
 
@@ -292,7 +292,7 @@ def convert_existing_image(args, formats: List[str]):
 
     # Convert to requested formats
     if 'nydus' in formats:
-        nydus_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-nydus"
+        nydus_image = f"{args.repository_url.rsplit(':', 1)[0]}:{args.repository_url.rsplit(':', 1)[1]}-fastpull"
         if convert_to_nydus(args.repository_url, nydus_image):
             built_images.append(nydus_image)
 
