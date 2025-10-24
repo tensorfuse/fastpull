@@ -193,7 +193,7 @@ helm upgrade --install nydus-snapshotter oci://registry-1.docker.io/tensorfuse/n
 apiVersion: v1
 kind: Pod
 metadata:
-  name: gpu-test-a100-nydus
+  name: gpu-test-a100-fastpull
 spec:
   tolerations:
     - operator: Exists
