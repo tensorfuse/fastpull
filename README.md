@@ -173,13 +173,13 @@ Total Elapsed Time:      329.367s
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/container-engine-accelerators/master/nvidia-driver-installer/cos/daemonset-preloaded-latest.yaml
 ```
-3. Install containerd config updater daemonset: `kubectl apply -f https://raw.githubusercontent.com/tensorfuse/nydus-gke/main/containerd-daemonset.yaml`
-4. Install the [Helm Chart](oci://registry-1.docker.io/tensorfuse/nydus-snapshotter). For COS:
+3. Install containerd config updater daemonset: `kubectl apply -f https://raw.githubusercontent.com/tensorfuse/fastpull-gke/main/containerd-daemonset.yaml`
+4. Install the [Helm Chart](https://hub.docker.com/repository/docker/tensorfuse/fastpull-snapshotter/general). For COS:
 ```bash
-helm upgrade --install nydus-snapshotter oci://registry-1.docker.io/tensorfuse/nydus-snapshotter \
+helm upgrade --install fastpull-snapshotter oci://registry-1.docker.io/tensorfuse/fastpull-snapshotter \
 --version 0.0.10-gke-helm \
 --create-namespace \
---namespace nydus-snapshotter \
+--namespace fastpull-snapshotter \
 --set 'tolerations[0].key=nvidia.com/gpu' \
 --set 'tolerations[0].operator=Equal' \
 --set 'tolerations[0].value=present' \
@@ -199,7 +199,7 @@ spec:
     - operator: Exists
   nodeSelector:
     cloud.google.com/gke-accelerator: nvidia-tesla-a100 # Use your GPU Type
-  runtimeClassName: runc-nydus
+  runtimeClassName: runc-fastpull
   containers:
   - name: debug-container
     image: IMAGE_PATH:TAG
