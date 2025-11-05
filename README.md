@@ -194,15 +194,24 @@ helm upgrade --install fastpull-snapshotter oci://registry-1.docker.io/tensorfus
   
     b. Build in a container:
   
-    First authenticate to your registry and ensure the ~/docker/config.json is updated, then build using our image:
-```bash
-docker run --rm --privileged \
-  -v /path/to/dockerfile-dir:/workspace:ro \
-  -v ~/.docker/config.json:/root/.docker/config.json:ro \
-  tensorfuse/fastpull-builder:latest \
-  REGISTRY/REPO/IMAGE:TAG
-```
-This creates `IMAGE:TAG` (normal) and `IMAGE:TAG-fastpull` (fastpull-optimized). Use the `-fastpull` tag in your pod spec. See [builder documentation](scripts/builder/README.md) for details.
+    First authenticate to your registry and ensure the ~/docker/config.json is updated
+    ```bash
+    #for aws
+    aws configure
+    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+    #for gcp
+    gcloud auth login
+    gcloud auth print-access-token | sudo nerdctl login <REGION>-docker.pkg.dev --username oauth2accesstoken --password-stdin
+    ```
+    Then build using our image:
+    ```bash
+    docker run --rm --privileged \
+      -v /path/to/dockerfile-dir:/workspace:ro \
+      -v ~/.docker/config.json:/root/.docker/config.json:ro \
+      tensorfuse/fastpull-builder:latest \
+      REGISTRY/REPO/IMAGE:TAG
+    ```
+    This creates `IMAGE:TAG` (normal) and `IMAGE:TAG-fastpull` (fastpull-optimized). Use the `-fastpull` tag in your pod spec. See [builder documentation](scripts/builder/README.md) for details.
 
 6. Create the pod spec for image we created. For COS, use a pod spec like this:
 ```yaml
