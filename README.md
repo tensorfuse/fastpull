@@ -188,7 +188,15 @@ helm upgrade --install fastpull-snapshotter oci://registry-1.docker.io/tensorfus
 --set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key=cloud.google.com/gke-accelerator' \
 --set 'affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].operator=Exists'
 ```
-5. On a standalone VM, preferably using Ubuntu os, [install fastpull](#installation-steps) and [build your image](#build-custom-images)
+5. Build your images. Authenticate to your registry, then build:
+```bash
+docker run --rm --privileged \
+  -v /path/to/dockerfile-dir:/workspace:ro \
+  -v ~/.docker/config.json:/root/.docker/config.json:ro \
+  tensorfuse/fastpull-builder:latest \
+  REGISTRY/REPO/IMAGE:TAG
+```
+This creates `IMAGE:TAG` (normal) and `IMAGE:TAG-fastpull` (fastpull-optimized). Use the `-fastpull` tag in your pod spec. See [builder documentation](scripts/builder/README.md) for details.
 6. Create the pod spec for image we created. For COS, use a pod spec like this:
 ```yaml
 apiVersion: v1
